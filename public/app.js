@@ -8,14 +8,15 @@
     set(k, v) { try { localStorage.setItem(k, v); } catch { /* private mode */ } }
   };
 
-  let data = null;          // last /api/state response
-  let draft = {};           // gameId -> abbr
+  let data = null;      // last /api/state response
+  let draft = {};       // gameId -> team abbr
   let draftDate = null;
   let saving = false;
+  let showAll = false;
   let pollTimer = null;
-  const prevBoard = {};
 
   const timeFmt = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+  const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' });
   const fmtTime = iso => timeFmt.format(new Date(iso));
 
   /* ---------- Data ---------- */
@@ -23,20 +24,17 @@
     try {
       const res = await fetch('/api/state', { headers: { 'x-entry-token': store.get('bg_token') || '' }, cache: 'no-store' });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Could not load the games.');
+      if (!res.ok) throw new Error(json.error || 'Tonight’s games couldn’t load.');
       data = json;
       syncDraft();
       render();
     } catch (err) {
       if (!data) $('#sb-strip').textContent = 'Tonight’s games couldn’t load. Retrying shortly.';
     } finally {
-      schedule();
+      clearTimeout(pollTimer);
+      const live = data && data.games.some(g => g.state === 'live');
+      pollTimer = setTimeout(load, live ? 15000 : 60000);
     }
-  }
-  function schedule() {
-    clearTimeout(pollTimer);
-    const live = data && data.games.some(g => g.state === 'live');
-    pollTimer = setTimeout(load, live ? 15000 : 60000);
   }
   document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
 
@@ -52,21 +50,17 @@
     for (const g of data.games) if (draft[g.id] === g.away.abbr || draft[g.id] === g.home.abbr) valid[g.id] = draft[g.id];
     draft = valid;
   }
-  function saveDraft() { store.set('bg_draft_' + draftDate, JSON.stringify(draft)); }
+  const saveDraft = () => store.set('bg_draft_' + draftDate, JSON.stringify(draft));
 
   /* ---------- Helpers ---------- */
   const playable = () => data.games.filter(g => g.state !== 'void');
-  function statusOf(g) {
-    if (g.state === 'void') return ['Postponed', ''];
-    if (g.state === 'upcoming') return [fmtTime(g.start), 'Puck drop'];
-    if (g.state === 'final') {
-      return [g.winner ? g.winner + ' wins' : 'Final', g.endedIn === 'OT' ? 'In overtime' : g.endedIn === 'SO' ? 'In a shootout' : 'Final'];
-    }
-    return ['Live', 'In progress'];
-  }
-  function jersey(t) {
-    const info = window.teamInfo(t);
-    return `<span class="jersey" style="--c:${info.color};--t:${info.trim};--i:${window.inkOn(info.color)}" aria-hidden="true">${esc(info.abbr)}</span>`;
+  const info = t => window.teamInfo(t);
+  const dot = t => { const i = info(t); return `<i class="dot" style="--c:${i.color};--t:${i.trim}" aria-hidden="true"></i>`; };
+  function statusText(g) {
+    if (g.state === 'void') return 'Postponed';
+    if (g.state === 'upcoming') return fmtTime(g.start);
+    if (g.state === 'live') return 'Live';
+    return g.endedIn === 'OT' ? 'Final/OT' : g.endedIn === 'SO' ? 'Final/SO' : 'Final';
   }
   function untilText(ms) {
     const m = Math.max(0, Math.round(ms / 60000));
@@ -74,119 +68,131 @@
     const h = Math.floor(m / 60), r = m % 60;
     return h + ' h' + (r ? ' ' + r + ' min' : '');
   }
+  const georgesRow = () => data.leaderboard.rows.find(r => r.expert);
 
   /* ---------- Render ---------- */
   function render() {
-    renderBoard();
-    renderTickets();
+    renderStrip();
+    renderDuel();
+    renderExpert();
     renderGames();
-    renderLeaderboard();
+    renderBoard();
   }
 
-  function setNum(id, value) {
-    const el = $(id);
-    if (el.textContent !== String(value)) {
-      if (prevBoard[id] !== undefined && value !== '--') {
-        el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
-      }
-      el.textContent = value;
-      prevBoard[id] = value;
+  function renderStrip() {
+    const el = $('#strip');
+    if (!data.games.length) { el.innerHTML = '<li class="chip"><span class="chip-status">No games tonight</span></li>'; return; }
+    el.innerHTML = data.games.map(g => {
+      const team = t => {
+        const cls = g.winner ? (g.winner === t.abbr ? 'won' : 'lost') : '';
+        return `<span class="chip-team ${cls}">${dot(t)}${esc(t.abbr)}</span>`;
+      };
+      return `<li class="chip is-${g.state}"><span class="chip-status">${esc(statusText(g))}</span>${team(g.away)}${team(g.home)}</li>`;
+    }).join('');
+    const live = playable().filter(g => g.state === 'live').length;
+    const pill = $('#live-pill');
+    pill.hidden = !live;
+    pill.textContent = live + ' live';
+  }
+
+  function bump(id, value) {
+    const el = $(id), v = String(value);
+    if (el.textContent !== v) {
+      if (el.dataset.seen) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+      el.dataset.seen = '1';
+      el.textContent = v;
     }
   }
 
-  function renderBoard() {
+  function renderDuel() {
+    $('#date-label').textContent = dayFmt.format(new Date(data.date + 'T12:00:00Z'));
     const games = playable();
     const live = games.filter(g => g.state === 'live').length;
     const final = games.filter(g => g.state === 'final').length;
-    const rows = data.leaderboard.rows;
-    const g = rows.find(r => r.expert);
-    const fans = rows.filter(r => !r.expert);
-
-    setNum('#sb-georges', g ? g.score : 0);
-    setNum('#sb-you', data.me ? data.me.score : '--');
+    const gs = georgesRow() ? georgesRow().score : 0;
+    bump('#sb-georges', gs);
+    bump('#sb-you', data.me ? data.me.score : '–');
     $('#sb-you-label').textContent = data.me ? data.me.username : 'You';
-    if (fans.length) {
-      setNum('#sb-lead', fans[0].score);
-      $('#sb-lead-label').textContent = fans[0].name;
-    } else {
-      setNum('#sb-lead', '--');
-      $('#sb-lead-label').textContent = 'Top fan';
-    }
+    $('#you-avatar').textContent = data.me ? data.me.username.slice(0, 2).toUpperCase() : '?';
 
-    let strip;
-    if (!games.length) strip = 'No NHL games on the schedule tonight';
-    else if (final === games.length) strip = `All ${games.length} games final`;
-    else if (!live && !final) strip = `${games.length} games tonight. First puck drop at ${fmtTime(data.lockAt)}`;
-    else strip = `${final} of ${games.length} final${live ? `, ${live} in progress` : ''}`;
-    $('#sb-strip').textContent = strip;
-
-    const pill = $('#live-pill');
-    pill.hidden = !live;
-    pill.textContent = live === 1 ? '1 game live' : `${live} games live`;
+    let s;
+    if (!games.length) s = 'No NHL games tonight. The next slate shows up here automatically.';
+    else if (final === games.length) {
+      if (!data.me) s = `All ${games.length} games are final. Georges got ${gs} right.`;
+      else if (data.me.score > gs) s = 'All games final. You beat Georges tonight.';
+      else if (data.me.score < gs) s = 'All games final. Georges wins this one.';
+      else s = 'All games final. You tied Georges.';
+    } else if (!live && !final) s = `${games.length} games tonight. First puck drop at ${fmtTime(data.lockAt)}.`;
+    else s = `${final} of ${games.length} games final${live ? `, ${live} in progress` : ''}.`;
+    $('#sb-strip').textContent = s;
+    $('#lockline').textContent = !data.locked && data.lockAt ? `Picks lock in ${untilText(data.lockAt - Date.now())}` : '';
   }
 
-  function renderTickets() {
-    const games = data.games;
-    const picks = data.expert;
-    const n = games.filter(g => picks[g.id]).length;
+  function renderExpert() {
+    const games = data.games.filter(g => data.expert[g.id]);
     const list = $('#tickets');
-    if (!n) {
-      list.innerHTML = `<li class="empty">${games.length ? 'Georges hasn’t posted tonight’s picks yet. Check back before the first puck drop.' : 'No games tonight. Georges will be back for the next slate.'}</li>`;
+    if (!games.length) {
+      list.innerHTML = `<li class="empty">${data.games.length ? 'Georges hasn’t posted tonight’s picks yet. Check back before the first puck drop.' : 'No games tonight. Georges will be back for the next slate.'}</li>`;
+      $('#x-record').textContent = '0–0';
       return;
     }
-    list.innerHTML = games.filter(g => picks[g.id]).map(g => {
-      const pick = picks[g.id];
+    let w = 0, l = 0;
+    list.innerHTML = games.map(g => {
+      const pick = data.expert[g.id];
       const t = pick === g.away.abbr ? g.away : g.home;
-      const info = window.teamInfo(t);
-      let cls = '', result;
-      const [main, sub] = statusOf(g);
-      if (g.state === 'final' && g.winner) { cls = g.winner === pick ? 'hit' : 'miss'; result = g.winner === pick ? 'Called it' : 'Missed'; }
-      else if (g.state === 'live') { cls = 'live'; result = 'In progress'; }
-      else if (g.state === 'void') result = 'Postponed, doesn’t count';
-      else result = main;
-      const meta = `${g.away.abbr} at ${g.home.abbr}`;
-      return `<li class="ticket ${cls}">${jersey(t)}<div class="ticket-body">
-        <span class="ticket-team">${esc(info.name)}</span>
-        <span class="ticket-meta">${esc(meta)}</span>
-        <span class="result">${esc(result)}</span></div></li>`;
+      let cls = '', res = statusText(g);
+      if (g.winner) { if (g.winner === pick) { cls = 'hit'; res = 'Called it'; w++; } else { cls = 'miss'; res = 'Missed'; l++; } }
+      else if (g.state === 'live') { cls = 'live'; res = 'Live'; }
+      return `<li class="xrow ${cls}">
+        <span class="xmatch">${esc(g.away.abbr)} at ${esc(g.home.abbr)}</span>
+        <span class="xpick">${dot(t)}${esc(info(t).city)} ${esc(info(t).name)}</span>
+        <span class="xres">${esc(res)}</span></li>`;
     }).join('');
-    $('#georges-sub').textContent = data.leaderboard.graded
-      ? `${data.leaderboard.rows.find(r => r.expert)?.score ?? 0} right out of ${data.leaderboard.graded} finished so far.`
-      : 'His winner in each game. Results mark themselves as games finish.';
+    $('#x-record').textContent = `${w}–${l}`;
+    $('#georges-sub').textContent = w + l ? `${w} right out of ${w + l} finished so far` : 'His winner in every game tonight';
   }
 
-  function sideBtn(g, t, home) {
-    const info = window.teamInfo(t);
+  function oddBtn(g, t, home) {
+    const i = info(t);
     const picked = draft[g.id] === t.abbr;
-    const georges = data.expert[g.id] === t.abbr;
     const locked = data.locked || g.state === 'void';
-    let cls = home ? 'side home' : 'side away';
-    if (g.winner === t.abbr) cls += ' won';
-    let mark = '';
-    if (g.winner && data.me && data.me.picks[g.id] === t.abbr) {
-      mark = g.winner === t.abbr ? '<span class="you-mark right">You got it</span>' : '<span class="you-mark wrong">Missed</span>';
-    }
-    const tags = (g.winner === t.abbr ? '<span class="win-tag">Winner</span>' : '') + (georges ? '<span class="gl-tag">Georges</span>' : '') + mark;
-    return `<button type="button" class="${cls}" data-game="${esc(g.id)}" data-team="${esc(t.abbr)}"
-      aria-pressed="${picked}" ${locked ? 'disabled' : ''}
-      aria-label="${esc(info.city + ' ' + info.name)}${georges ? ', Georges’ pick' : ''}${g.winner === t.abbr ? ', winner' : ''}">
-      ${jersey(t)}
-      <span class="side-name"><span class="side-city">${esc(info.city)}</span><span class="side-team">${esc(info.name)}</span>${tags ? `<span class="side-tags">${tags}</span>` : ''}</span>
-    </button>`;
+    let cls = 'odd';
+    if (g.winner && data.me && data.me.picks[g.id] === t.abbr) cls += g.winner === t.abbr ? ' right' : ' wrong';
+    return `<button type="button" class="${cls}" data-game="${esc(g.id)}" data-team="${esc(t.abbr)}" aria-pressed="${picked}" ${locked ? 'disabled' : ''}
+      aria-label="Pick ${esc(i.city + ' ' + i.name)}"><b>${esc(t.abbr)}</b><small>${home ? 'Home' : 'Away'}</small></button>`;
+  }
+
+  function splitLine(g) {
+    const sp = data.split && data.split[g.id];
+    const saved = data.me && data.me.picks[g.id];
+    if (!sp || !(saved || data.locked)) return '';
+    const a = sp[g.away.abbr] || 0, h = sp[g.home.abbr] || 0, total = a + h;
+    if (!total) return '';
+    const pa = Math.round(a / total * 100);
+    return `<div class="split" aria-label="${pa}% of players picked ${esc(g.away.abbr)}, ${100 - pa}% picked ${esc(g.home.abbr)}">
+      <span>${esc(g.away.abbr)} ${pa}%</span><span class="split-bar"><i style="width:${pa}%"></i></span><span>${100 - pa}% ${esc(g.home.abbr)}</span></div>`;
   }
 
   function renderGames() {
-    const games = data.games;
     const list = $('#games');
-    if (!games.length) {
+    if (!data.games.length) {
       list.innerHTML = '<li class="empty">No NHL games on the schedule tonight. The next slate will show up here automatically.</li>';
     } else {
-      list.innerHTML = games.map(g => {
-        const [main, sub] = statusOf(g);
-        return `<li class="game is-${g.state}">
-          ${sideBtn(g, g.away, false)}
-          <div class="mid"><span class="mid-main">${esc(main)}</span><span class="mid-sub">${esc(sub || (g.state === 'upcoming' ? '' : ''))}</span></div>
-          ${sideBtn(g, g.home, true)}
+      list.innerHTML = data.games.map(g => {
+        const team = t => {
+          const i = info(t);
+          const cls = g.winner ? (g.winner === t.abbr ? 'won' : 'lost') : '';
+          return `<span class="pteam ${cls}">${dot(t)}<span>${esc(i.city)} ${esc(i.name)}</span></span>`;
+        };
+        const xp = data.expert[g.id];
+        const gl = xp
+          ? `<div class="pgl ${g.winner && g.winner !== xp ? 'miss' : ''}"><small>Georges</small><b title="Georges’ pick">${esc(xp)}</b></div>`
+          : '<div class="pgl none">–</div>';
+        return `<li class="prow is-${g.state}">
+          <div class="pmatch"><span class="pstat ${g.state}">${esc(statusText(g))}</span>${team(g.away)}${team(g.home)}</div>
+          <div class="pbtns">${oddBtn(g, g.away, false)}${oddBtn(g, g.home, true)}</div>
+          ${gl}
+          ${splitLine(g)}
         </li>`;
       }).join('');
     }
@@ -199,61 +205,84 @@
     const total = games.length;
     $('#progress-text').textContent = `${n} of ${total} picked`;
     $('#progress-fill').style.width = total ? (n / total * 100) + '%' : '0';
+    const withX = games.filter(g => data.expert[g.id] && draft[g.id]);
+    const agree = withX.filter(g => draft[g.id] === data.expert[g.id]).length;
+    $('#agree').textContent = withX.length ? `Same as Georges on ${agree} of ${withX.length}` : '';
 
-    const expertSet = games.filter(g => data.expert[g.id]);
-    const agree = expertSet.filter(g => draft[g.id] === data.expert[g.id]).length;
-    const compared = expertSet.filter(g => draft[g.id]).length;
-    $('#agree').textContent = compared ? `Same as Georges on ${agree} of ${compared}` : '';
-
-    const btn = $('#submit');
-    const name = $('#username');
+    const btn = $('#submit'), name = $('#username');
     const same = data.me && games.every(g => data.me.picks[g.id] === draft[g.id]) && data.me.username === name.value.trim();
     name.disabled = data.locked;
     btn.classList.toggle('saved', !!same);
     if (data.locked) {
       btn.disabled = true;
       btn.textContent = data.me ? 'Picks locked' : 'Entries closed';
-      $('#lockline').textContent = data.me
-        ? 'Your picks are locked in. Follow along as the winners come in.'
-        : 'Picks locked at the first puck drop. Come back for the next slate.';
+      $('#lock-sub').textContent = data.me ? 'Your picks are locked in. Winners mark themselves as games end.' : 'Picks locked at the first puck drop. Come back for the next slate.';
     } else {
       btn.disabled = saving || !total || n !== total || same;
       btn.textContent = saving ? 'Saving' : same ? 'Picks saved' : data.me ? 'Update picks' : 'Submit picks';
-      $('#lockline').textContent = data.lockAt
-        ? `Picks lock at ${fmtTime(data.lockAt)}, in ${untilText(data.lockAt - Date.now())}. Overtime and shootouts count.`
-        : 'Pick the winner of every game, overtime and shootouts included.';
+      $('#lock-sub').textContent = data.lockAt
+        ? `Pick the winner of every game. Picks lock at ${fmtTime(data.lockAt)}.`
+        : 'Pick the winner of every game. Overtime and shootouts count.';
     }
   }
 
-  function renderLeaderboard() {
+  function renderBoard() {
     const { rows, graded } = data.leaderboard;
-    const georges = rows.find(r => r.expert);
-    $('#board-sub').textContent = graded
-      ? `${graded} of ${playable().length} games final. One point per correct pick.`
-      : `${data.entries} ${data.entries === 1 ? 'player is' : 'players are'} in. Points start counting when the first game goes final.`;
+    const g = georgesRow();
+    const total = playable().length;
+    const fans = rows.filter(r => !r.expert);
+    const beat = g && graded ? fans.filter(r => r.score > g.score).length : 0;
+    $('#f-players').textContent = data.entries;
+    $('#f-final').textContent = `${graded}/${total}`;
+    $('#f-beat').textContent = beat;
+    $('#board-sub').textContent = graded ? `${graded} of ${total} games final` : 'Points start when the first game ends';
+
     const myName = data.me && data.me.username.toLowerCase();
-    $('#rows').innerHTML = rows.length ? rows.map(r => {
-      const me = !r.expert && r.name.toLowerCase() === myName;
-      const beat = !r.expert && georges && graded && r.score > georges.score;
-      return `<tr class="${r.expert ? 'is-georges' : ''} ${me ? 'is-me' : ''}">
-        <td class="place">${r.rank}</td>
-        <td class="player">${esc(r.name)}${me ? '<span class="mark me">You</span>' : ''}${beat ? '<span class="mark beat">Beat Georges</span>' : ''}</td>
-        <td class="pts">${r.score}</td></tr>`;
-    }).join('') : '<tr><td colspan="3" class="board-empty">No entries yet. Make your picks and be the first name up here.</td></tr>';
+    const isMe = r => !r.expert && r.name.toLowerCase() === myName;
+    const TOP = 10;
+    let shown = rows;
+    let hidden = 0;
+    if (!showAll && rows.length > TOP + 2) {
+      const keep = new Set(rows.slice(0, TOP));
+      rows.forEach(r => { if (r.expert || isMe(r)) keep.add(r); });
+      shown = rows.filter(r => keep.has(r));
+      hidden = rows.length - shown.length;
+    }
+    const row = r => `<tr class="${r.expert ? 'is-georges' : ''} ${isMe(r) ? 'is-me' : ''} ${r.rank === 1 && !r.expert ? 'top1' : ''}">
+      <td class="place">${r.rank}</td>
+      <td class="player">${esc(r.name)}${isMe(r) ? '<span class="mark me">You</span>' : ''}${!r.expert && g && graded && r.score > g.score ? '<span class="mark beat">Beat Georges</span>' : ''}</td>
+      <td class="pts">${r.score}</td></tr>`;
+    let html = '';
+    shown.forEach((r, i) => {
+      if (i > 0 && rows.indexOf(r) - rows.indexOf(shown[i - 1]) > 1) html += '<tr class="gap"><td colspan="3">…</td></tr>';
+      html += row(r);
+    });
+    $('#rows').innerHTML = rows.length ? html : '<tr><td colspan="3" class="board-empty">No entries yet. Make your picks and be the first name here.</td></tr>';
+    const more = $('#more');
+    more.hidden = !hidden && !showAll;
+    more.textContent = showAll ? 'Show top 10' : `Show all ${rows.length} players`;
   }
 
   /* ---------- Actions ---------- */
   $('#games').addEventListener('click', e => {
-    const b = e.target.closest('button.side');
+    const b = e.target.closest('button.odd');
     if (!b || b.disabled || !data || data.locked) return;
     draft[b.dataset.game] = b.dataset.team;
     saveDraft();
     renderGames();
-    const again = document.querySelector(`.side[data-game="${CSS.escape(b.dataset.game)}"][data-team="${CSS.escape(b.dataset.team)}"]`);
+    const again = document.querySelector(`.odd[data-game="${CSS.escape(b.dataset.game)}"][data-team="${CSS.escape(b.dataset.team)}"]`);
     if (again) again.focus();
     setStatus('');
   });
   $('#username').addEventListener('input', () => { if (data) updateEntry(); });
+  $('#more').addEventListener('click', () => { showAll = !showAll; renderBoard(); });
+
+  // Mark the menu link that was used
+  const links = [...document.querySelectorAll('.nav-links a')];
+  links.forEach(a => a.addEventListener('click', () => {
+    links.forEach(l => l.classList.toggle('on', l === a));
+    if (a.getAttribute('href') === '#rules') $('#rules').open = true;
+  }));
 
   function setStatus(msg, kind) {
     const s = $('#status');
@@ -289,6 +318,10 @@
     }
   });
 
-  setInterval(() => { if (data && !data.locked) { if (data.lockAt && Date.now() >= data.lockAt) load(); else updateEntry(); } }, 30000);
+  setInterval(() => {
+    if (!data || data.locked) return;
+    if (data.lockAt && Date.now() >= data.lockAt) load();
+    else { renderDuel(); updateEntry(); }
+  }, 30000);
   load();
 })();

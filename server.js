@@ -211,9 +211,17 @@ async function handleState(req, res) {
   const me = findByToken(contest, req.headers['x-entry-token']);
   const ids = new Set(games.map(g => g.id));
   const expert = Object.fromEntries(Object.entries(contest.expert).filter(([id]) => ids.has(id)));
+  const split = {}; // how many players picked each team, per game
+  for (const e of contest.entries) {
+    for (const [id, team] of Object.entries(e.picks || {})) {
+      if (!ids.has(id)) continue;
+      split[id] = split[id] || {};
+      split[id][team] = (split[id][team] || 0) + 1;
+    }
+  }
   send(res, 200, {
     date, now: Date.now(), lockAt: lockTime(games), locked,
-    games, expert,
+    games, expert, split,
     me: me ? { username: me.username, picks: me.picks, score: scorePicks(me.picks, games) } : null,
     leaderboard: leaderboard(contest, games),
     entries: contest.entries.length
