@@ -1,0 +1,305 @@
+// Beat Georges Pick'em — server
+// Serves the site, pulls live NHL scores, stores entries, grades picks automatically.
+// No dependencies. Node 18+.
+
+const http = require('http');
+const fs = require('fs');
+const fsp = fs.promises;
+const path = require('path');
+const crypto = require('crypto');
+
+const PORT = Number(process.env.PORT) || 3000;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(__dirname, 'data'));
+const MOCK_FILE = process.env.MOCK_FILE ? path.resolve(process.env.MOCK_FILE) : null;
+const PUBLIC_DIR = path.join(__dirname, 'public');
+const NHL_SCORE_URL = date => `https://api-web.nhle.com/v1/score/${date}`;
+const RESERVED = ['georges', 'laraque', 'georgeslaraque', 'admin', 'betgrw', 'moderator'];
+
+fs.mkdirSync(DATA_DIR, { recursive: true });
+
+/* ---------- Dates ---------- */
+// A hockey night runs past midnight, so the slate rolls over at 6 AM Eastern.
+function etDate(d) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+}
+async function contestDate() {
+  const s = await readJSON(path.join(DATA_DIR, 'settings.json'), {});
+  if (s.contestDate && /^\d{4}-\d{2}-\d{2}$/.test(s.contestDate)) return s.contestDate;
+  return etDate(new Date(Date.now() - 6 * 3600e3));
+}
+
+/* ---------- Storage (JSON files, written atomically, one write at a time) ---------- */
+async function readJSON(file, fallback) {
+  try { return JSON.parse(await fsp.readFile(file, 'utf8')); } catch { return fallback; }
+}
+let writeChain = Promise.resolve();
+function writeJSON(file, data) {
+  writeChain = writeChain.then(async () => {
+    const tmp = file + '.' + process.pid + '.tmp';
+    await fsp.writeFile(tmp, JSON.stringify(data, null, 2));
+    await fsp.rename(tmp, file);
+  });
+  return writeChain;
+}
+const contestFile = date => path.join(DATA_DIR, `contest-${date}.json`);
+async function loadContest(date) {
+  const c = await readJSON(contestFile(date), {});
+  return { expert: c.expert || {}, entries: Array.isArray(c.entries) ? c.entries : [] };
+}
+
+/* ---------- Live NHL games ---------- */
+const cache = new Map(); // date -> { at, games, ttl }
+function normalizeGame(g) {
+  const team = t => ({
+    abbr: t.abbrev,
+    place: t.placeName?.default || '',
+    name: t.commonName?.default || t.name?.default || t.abbrev,
+    score: typeof t.score === 'number' ? t.score : null
+  });
+  const sched = g.gameScheduleState || 'OK';
+  let state = 'upcoming';
+  if (sched === 'PPD' || sched === 'CNCL') state = 'void';
+  else if (g.gameState === 'LIVE' || g.gameState === 'CRIT') state = 'live';
+  else if (g.gameState === 'FINAL' || g.gameState === 'OFF') state = 'final';
+  const away = team(g.awayTeam), home = team(g.homeTeam);
+  let winner = null;
+  if (state === 'final' && away.score !== null && home.score !== null && away.score !== home.score) {
+    winner = away.score > home.score ? away.abbr : home.abbr;
+  }
+  const pd = g.periodDescriptor || {};
+  return {
+    id: String(g.id),
+    start: g.startTimeUTC,
+    state,
+    away, home, winner,
+    period: pd.number || g.period || null,
+    periodType: pd.periodType || null,
+    clock: g.clock?.timeRemaining || null,
+    intermission: !!g.clock?.inIntermission,
+    endedIn: g.gameOutcome?.lastPeriodType || null
+  };
+}
+async function getGames(date) {
+  const hit = cache.get(date);
+  if (hit && Date.now() - hit.at < hit.ttl) return hit.games;
+  try {
+    let raw;
+    if (MOCK_FILE) raw = JSON.parse(await fsp.readFile(MOCK_FILE, 'utf8'));
+    else {
+      const res = await fetch(NHL_SCORE_URL(date), { headers: { 'User-Agent': 'BeatGeorgesPickem/1.0' }, signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error('NHL API ' + res.status);
+      raw = await res.json();
+    }
+    const games = (raw.games || [])
+      .filter(g => !g.gameDate || g.gameDate === date)
+      .filter(g => !g.gameType || g.gameType === 2 || g.gameType === 3) // regular season + playoffs
+      .map(normalizeGame)
+      .sort((a, b) => new Date(a.start) - new Date(b.start));
+    const anyLive = games.some(g => g.state === 'live');
+    cache.set(date, { at: Date.now(), games, ttl: MOCK_FILE ? 1000 : anyLive ? 15000 : 60000 });
+    return games;
+  } catch (err) {
+    console.error('Score fetch failed:', err.message);
+    if (hit) return hit.games; // serve last good data
+    throw err;
+  }
+}
+
+/* ---------- Contest logic ---------- */
+const playable = games => games.filter(g => g.state !== 'void');
+function lockTime(games) {
+  const starts = playable(games).map(g => new Date(g.start).getTime()).filter(Number.isFinite);
+  return starts.length ? Math.min(...starts) : null;
+}
+const isLocked = games => {
+  const t = lockTime(games);
+  return t !== null && Date.now() >= t;
+};
+function scorePicks(picks, games) {
+  let correct = 0;
+  for (const g of games) if (g.winner && picks[g.id] === g.winner) correct++;
+  return correct;
+}
+function leaderboard(contest, games) {
+  const graded = games.filter(g => g.winner).length;
+  const rows = contest.entries.map(e => ({ name: e.username, score: scorePicks(e.picks, games) }));
+  const expertCount = playable(games).filter(g => contest.expert[g.id]).length;
+  if (expertCount) rows.push({ name: 'Georges Laraque', score: scorePicks(contest.expert, games), expert: true });
+  rows.sort((a, b) => b.score - a.score || (b.expert ? 1 : 0) - (a.expert ? 1 : 0) || a.name.localeCompare(b.name));
+  let rank = 0;
+  rows.forEach((r, i) => { if (i === 0 || r.score !== rows[i - 1].score) rank = i + 1; r.rank = rank; });
+  return { graded, rows };
+}
+const hashToken = t => crypto.createHash('sha256').update(String(t)).digest('hex');
+function findByToken(contest, token) {
+  if (!token) return null;
+  const h = hashToken(token);
+  return contest.entries.find(e => e.tokenHash === h) || null;
+}
+
+/* ---------- HTTP helpers ---------- */
+function send(res, status, body, headers = {}) {
+  const isObj = typeof body === 'object' && !Buffer.isBuffer(body);
+  res.writeHead(status, {
+    'Content-Type': isObj ? 'application/json; charset=utf-8' : headers['Content-Type'] || 'text/plain; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'same-origin',
+    ...headers
+  });
+  res.end(isObj ? JSON.stringify(body) : body);
+}
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let size = 0; const chunks = [];
+    req.on('data', c => { size += c.length; if (size > 20000) { reject(new Error('too large')); req.destroy(); } else chunks.push(c); });
+    req.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString() || '{}')); } catch { reject(new Error('bad json')); } });
+    req.on('error', reject);
+  });
+}
+const hits = new Map();
+function rateLimited(ip, limit = 20) {
+  const now = Date.now(), list = (hits.get(ip) || []).filter(t => now - t < 60000);
+  list.push(now); hits.set(ip, list);
+  return list.length > limit;
+}
+function isAdmin(req) {
+  if (!ADMIN_PASSWORD) return false;
+  const given = Buffer.from(String(req.headers['x-admin-password'] || ''));
+  const real = Buffer.from(ADMIN_PASSWORD);
+  return given.length === real.length && crypto.timingSafeEqual(given, real);
+}
+const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json' };
+
+/* ---------- Routes ---------- */
+async function handleState(req, res) {
+  const date = await contestDate();
+  const games = await getGames(date);
+  const contest = await loadContest(date);
+  const locked = isLocked(games);
+  const me = findByToken(contest, req.headers['x-entry-token']);
+  const ids = new Set(games.map(g => g.id));
+  const expert = Object.fromEntries(Object.entries(contest.expert).filter(([id]) => ids.has(id)));
+  send(res, 200, {
+    date, now: Date.now(), lockAt: lockTime(games), locked,
+    games, expert,
+    me: me ? { username: me.username, picks: me.picks, score: scorePicks(me.picks, games) } : null,
+    leaderboard: leaderboard(contest, games),
+    entries: contest.entries.length
+  });
+}
+
+async function handleEntry(req, res, ip) {
+  if (rateLimited(ip)) return send(res, 429, { error: 'Too many tries. Wait a minute and submit again.' });
+  const body = await readBody(req);
+  const date = await contestDate();
+  const games = await getGames(date);
+  if (!playable(games).length) return send(res, 400, { error: 'There are no games on tonight’s slate.' });
+  if (isLocked(games)) return send(res, 403, { error: 'Picks locked at the first puck drop.' });
+
+  const username = String(body.username || '').trim();
+  if (!/^[A-Za-z0-9_]{3,16}$/.test(username)) return send(res, 400, { error: 'Usernames are 3 to 16 letters, numbers or underscores.' });
+  if (RESERVED.includes(username.toLowerCase().replace(/_/g, ''))) return send(res, 400, { error: 'That username is reserved. Pick another one.' });
+
+  const picks = {};
+  for (const g of playable(games)) {
+    const p = body.picks?.[g.id];
+    if (p !== g.away.abbr && p !== g.home.abbr) return send(res, 400, { error: `Pick a winner for ${g.away.abbr} at ${g.home.abbr}.` });
+    picks[g.id] = p;
+  }
+
+  const contest = await loadContest(date);
+  const mine = findByToken(contest, req.headers['x-entry-token']);
+  const taken = contest.entries.find(e => e.username.toLowerCase() === username.toLowerCase());
+  if (taken && taken !== mine) return send(res, 409, { error: 'That username is taken tonight. Pick another one.' });
+
+  let token = null;
+  if (mine) { mine.username = username; mine.picks = picks; mine.updated = Date.now(); }
+  else {
+    token = crypto.randomBytes(24).toString('hex');
+    contest.entries.push({ username, picks, tokenHash: hashToken(token), created: Date.now(), updated: Date.now() });
+  }
+  await writeJSON(contestFile(date), contest);
+  send(res, 200, { ok: true, username, token, updated: !!mine });
+}
+
+async function handleAdmin(req, res, route) {
+  if (!ADMIN_PASSWORD) return send(res, 503, { error: 'Set ADMIN_PASSWORD on the server to turn on the admin page.' });
+  if (!isAdmin(req)) return send(res, 401, { error: 'Wrong password.' });
+  const date = await contestDate();
+
+  if (route === 'state' && req.method === 'GET') {
+    const games = await getGames(date);
+    const contest = await loadContest(date);
+    const settings = await readJSON(path.join(DATA_DIR, 'settings.json'), {});
+    return send(res, 200, {
+      date, override: settings.contestDate || null, locked: isLocked(games), games, expert: contest.expert,
+      entries: contest.entries.map(e => ({ username: e.username, created: e.created, score: scorePicks(e.picks, games) }))
+    });
+  }
+  if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' });
+  const body = await readBody(req);
+
+  if (route === 'picks') {
+    const games = await getGames(date);
+    const contest = await loadContest(date);
+    const expert = {};
+    for (const g of games) {
+      const p = body.picks?.[g.id];
+      if (p === g.away.abbr || p === g.home.abbr) expert[g.id] = p;
+    }
+    contest.expert = expert;
+    await writeJSON(contestFile(date), contest);
+    return send(res, 200, { ok: true, saved: Object.keys(expert).length });
+  }
+  if (route === 'remove-entry') {
+    const contest = await loadContest(date);
+    const before = contest.entries.length;
+    contest.entries = contest.entries.filter(e => e.username.toLowerCase() !== String(body.username || '').toLowerCase());
+    await writeJSON(contestFile(date), contest);
+    return send(res, 200, { ok: true, removed: before - contest.entries.length });
+  }
+  if (route === 'settings') {
+    const d = body.contestDate;
+    if (d && !/^\d{4}-\d{2}-\d{2}$/.test(d)) return send(res, 400, { error: 'Use a date like 2026-11-14.' });
+    await writeJSON(path.join(DATA_DIR, 'settings.json'), { contestDate: d || null });
+    return send(res, 200, { ok: true });
+  }
+  send(res, 404, { error: 'Not found' });
+}
+
+async function serveStatic(req, res, pathname) {
+  if (pathname === '/') pathname = '/index.html';
+  if (pathname === '/admin') pathname = '/admin.html';
+  const file = path.normalize(path.join(PUBLIC_DIR, pathname));
+  if (!file.startsWith(PUBLIC_DIR + path.sep)) return send(res, 404, 'Not found');
+  try {
+    const data = await fsp.readFile(file);
+    const ext = path.extname(file);
+    res.writeHead(200, {
+      'Content-Type': MIME[ext] || 'application/octet-stream',
+      'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=300',
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'"
+    });
+    res.end(data);
+  } catch { send(res, 404, 'Not found'); }
+}
+
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url, 'http://x');
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress;
+  try {
+    if (url.pathname === '/api/state' && req.method === 'GET') return await handleState(req, res);
+    if (url.pathname === '/api/entry' && req.method === 'POST') return await handleEntry(req, res, ip);
+    if (url.pathname.startsWith('/api/admin/')) return await handleAdmin(req, res, url.pathname.slice(11));
+    if (url.pathname.startsWith('/api/')) return send(res, 404, { error: 'Not found' });
+    if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'Method not allowed');
+    return await serveStatic(req, res, url.pathname);
+  } catch (err) {
+    console.error(err);
+    send(res, 502, { error: 'Tonight’s games couldn’t load. The page will retry on its own.' });
+  }
+});
+server.listen(PORT, () => console.log(`Beat Georges running on http://localhost:${PORT}${MOCK_FILE ? ' (sample data)' : ''}${ADMIN_PASSWORD ? '' : ' — admin off: set ADMIN_PASSWORD'}`));

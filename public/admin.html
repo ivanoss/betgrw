@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Admin | Beat Georges</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/">BET<span>GRW</span></a>
+  <a href="/" class="back">View the site</a>
+</header>
+<main>
+  <h1 class="admin-h">Admin</h1>
+
+  <form id="login" class="login">
+    <label for="pw">Admin password</label>
+    <input id="pw" type="password" autocomplete="current-password" required>
+    <button class="submit" type="submit">Sign in</button>
+    <p class="status" id="login-status" role="status"></p>
+  </form>
+
+  <div id="panel" hidden>
+    <section class="block">
+      <div class="block-head">
+        <h2>Georges’ picks</h2>
+        <p class="block-sub" id="slate-info"></p>
+      </div>
+      <ol class="games" id="admin-games"></ol>
+      <div class="admin-actions">
+        <button class="submit" id="save-picks" type="button">Save Georges’ picks</button>
+        <p class="status" id="picks-status" role="status"></p>
+      </div>
+    </section>
+
+    <div class="line blue" aria-hidden="true"></div>
+
+    <section class="block">
+      <div class="block-head">
+        <h2>Players</h2>
+        <p class="block-sub">Remove an entry with an offensive username or a duplicate account.</p>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Player</th><th>Entered</th><th class="num">Points</th><th class="num"><span class="sr">Actions</span></th></tr></thead>
+        <tbody id="admin-rows"></tbody></table>
+      </div>
+      <p class="status" id="rows-status" role="status"></p>
+    </section>
+
+    <div class="line blue" aria-hidden="true"></div>
+
+    <section class="block">
+      <div class="block-head">
+        <h2>Contest date</h2>
+        <p class="block-sub">The site follows tonight’s NHL slate automatically and rolls over at 6 AM Eastern. Set a date only to run a different night.</p>
+      </div>
+      <form id="date-form" class="date-form">
+        <label for="date">Slate date</label>
+        <input id="date" type="date">
+        <button class="submit" type="submit">Use this date</button>
+        <button class="text-btn" id="date-auto" type="button">Go back to automatic</button>
+      </form>
+      <p class="status" id="date-status" role="status"></p>
+    </section>
+  </div>
+</main>
+<script src="teams.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beat Georges | BetGRW Pick’em</title>
+<meta name="description" content="Georges Laraque picks a winner in every NHL game tonight. Make your picks, see the winners come in and find out if you finish ahead of him.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#play">Skip to your picks</a>
+
+<header class="top">
+  <a class="brand" href="/" aria-label="BetGRW home">BET<span>GRW</span></a>
+  <p class="live-pill" id="live-pill" hidden></p>
+</header>
+
+<main>
+  <section class="intro">
+    <h1>Beat Georges<br>Laraque</h1>
+    <p class="lede">Big Georges has picked a winner in every NHL game tonight. Make your own calls before the first puck drop, then watch the winners come in here.</p>
+  </section>
+
+  <section class="board" aria-label="Tonight’s scoreboard">
+    <div class="board-cell gl">
+      <span class="board-label">Georges</span>
+      <span class="board-num" id="sb-georges">0</span>
+    </div>
+    <div class="board-cell you">
+      <span class="board-label" id="sb-you-label">You</span>
+      <span class="board-num" id="sb-you">--</span>
+    </div>
+    <div class="board-cell lead">
+      <span class="board-label" id="sb-lead-label">Top fan</span>
+      <span class="board-num" id="sb-lead">--</span>
+    </div>
+    <div class="board-strip" id="sb-strip" aria-live="polite">Loading tonight’s games</div>
+  </section>
+
+  <div class="line red" aria-hidden="true"></div>
+
+  <section class="block" id="georges" aria-labelledby="georges-h">
+    <div class="block-head">
+      <h2 id="georges-h">Georges’ picks</h2>
+      <p class="block-sub" id="georges-sub">His winner in each game. Results mark themselves as games finish.</p>
+    </div>
+    <ol class="tickets" id="tickets"></ol>
+  </section>
+
+  <div class="line blue" aria-hidden="true"></div>
+
+  <section class="block" id="play" aria-labelledby="play-h">
+    <div class="block-head">
+      <h2 id="play-h">Your picks</h2>
+      <p class="block-sub" id="lockline">Pick the winner of every game, overtime and shootouts included.</p>
+    </div>
+
+    <div class="name-row">
+      <label for="username">Your username</label>
+      <input id="username" name="username" type="text" maxlength="16" autocomplete="nickname" spellcheck="false" placeholder="e.g. HabsFan_514" aria-describedby="username-help">
+      <p id="username-help" class="help">3 to 16 letters, numbers or underscores. It shows on the leaderboard.</p>
+    </div>
+
+    <ol class="games" id="games"></ol>
+
+    <div class="submit-bar" id="submit-bar">
+      <div class="progress-wrap">
+        <span class="progress-text" id="progress-text">0 of 0 picked</span>
+        <span class="agree" id="agree"></span>
+        <div class="progress" aria-hidden="true"><div id="progress-fill"></div></div>
+      </div>
+      <button class="submit" id="submit" type="button" disabled>Submit picks</button>
+    </div>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </section>
+
+  <div class="line blue" aria-hidden="true"></div>
+
+  <section class="block" id="leaderboard" aria-labelledby="board-h">
+    <div class="block-head">
+      <h2 id="board-h">Leaderboard</h2>
+      <p class="block-sub" id="board-sub">One point for every correct pick. Ties share a place.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Place</th><th scope="col">Player</th><th scope="col" class="num">Points</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <details class="rules">
+    <summary>How it works</summary>
+    <ul>
+      <li>Pick a winner in every game on tonight’s slate. Overtime and shootout results count.</li>
+      <li>Picks lock for everyone at the first puck drop. Until then, you can change them as often as you like from this device.</li>
+      <li>Each correct pick is worth one point. Winners and points update automatically as games go final.</li>
+      <li>Finish ahead of Georges and your name gets the “Beat Georges” mark.</li>
+      <li>Postponed or cancelled games don’t count for anyone.</li>
+    </ul>
+  </details>
+</main>
+
+<footer class="foot">
+  <p>BetGRW Pick’em. 18+. Play responsibly.</p>
+  <p>Game results from the NHL. BetGRW is not affiliated with the NHL or its teams.</p>
+</footer>
+
+<script src="teams.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

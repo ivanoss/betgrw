@@ -1,0 +1,14 @@
+.back { color: var(--blue); font-weight: 600; }
+.admin-h { font-size: clamp(56px, 9vw, 96px); margin: 12px 0 28px; }
+.login, .date-form { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.login label, .date-form label { font-weight: 700; width: 100%; }
+.login input, .date-form input {
+  background: #fff; border: 2px solid var(--ink); border-radius: 4px; padding: 10px 12px; font-size: 17px; min-width: 240px;
+}
+.login .status { width: 100%; }
+.admin-actions { display: flex; align-items: center; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
+.admin-actions .status { margin: 0; }
+.text-btn { background: none; border: 0; color: var(--blue); font-weight: 600; text-decoration: underline; padding: 8px; }
+.remove { background: none; border: 1px solid var(--red); color: var(--red); border-radius: 4px; padding: 6px 12px; font-weight: 600; }
+.remove:hover { background: var(--red); color: #fff; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

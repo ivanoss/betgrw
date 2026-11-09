@@ -1,0 +1,14 @@
+{
+  "name": "beat-georges-pickem",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BetGRW Pick'em: Georges Laraque's picks, live NHL scores and a shared leaderboard.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "demo": "node scripts/demo.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
