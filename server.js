@@ -237,8 +237,8 @@ async function handleEntry(req, res, ip) {
   if (isLocked(games)) return send(res, 403, { error: 'Picks locked at the first puck drop.' });
 
   const username = String(body.username || '').trim();
-  if (!/^[A-Za-z0-9_]{3,16}$/.test(username)) return send(res, 400, { error: 'Usernames are 3 to 16 letters, numbers or underscores.' });
-  if (RESERVED.includes(username.toLowerCase().replace(/_/g, ''))) return send(res, 400, { error: 'That username is reserved. Pick another one.' });
+  if (!/^[A-Za-z0-9_.\-]{3,20}$/.test(username)) return send(res, 400, { error: 'Usernames are 3 to 20 letters, numbers, dots, dashes or underscores.' });
+  if (RESERVED.includes(username.toLowerCase().replace(/[_.\-]/g, ''))) return send(res, 400, { error: 'That username is reserved. Pick another one.' });
 
   const picks = {};
   for (const g of playable(games)) {

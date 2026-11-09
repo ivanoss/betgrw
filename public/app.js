@@ -292,8 +292,8 @@
 
   $('#submit').addEventListener('click', async () => {
     const username = $('#username').value.trim();
-    if (!/^[A-Za-z0-9_]{3,16}$/.test(username)) {
-      setStatus('Add a username first: 3 to 16 letters, numbers or underscores.', 'error');
+    if (!/^[A-Za-z0-9_.\-]{3,20}$/.test(username)) {
+      setStatus('Add your BetGRW username first: 3 to 20 letters, numbers, dots, dashes or underscores.', 'error');
       $('#username').focus();
       return;
     }

@@ -38,6 +38,19 @@
 </div>
 
 <div class="page">
+  <!-- PRIZE: edit the amount and the eligibility rule here -->
+  <section class="card prize" aria-labelledby="prize-h">
+    <div class="prize-amount">
+      <span class="prize-label">Grand prize</span>
+      <span class="prize-num" id="prize-h">$100</span>
+    </div>
+    <div class="prize-text">
+      <p class="prize-lead">The player with the most correct picks wins $100.</p>
+      <p class="prize-rule">To be eligible, you need at least a <strong>$20 deposit on betgrw.com in the last 30 days</strong>.</p>
+    </div>
+    <a class="prize-cta" href="https://betgrw.com" target="_blank" rel="noopener">Deposit at betgrw.com</a>
+  </section>
+
   <main class="main-col">
 
     <section class="card duel" aria-labelledby="duel-h">
@@ -87,9 +100,9 @@
       </header>
 
       <div class="name-row">
-        <label for="username">Username</label>
-        <input id="username" name="username" type="text" maxlength="16" autocomplete="nickname" spellcheck="false" placeholder="e.g. HabsFan_514" aria-describedby="username-help">
-        <p id="username-help" class="help">3 to 16 letters, numbers or underscores. Shown on the leaderboard.</p>
+        <label for="username">BetGRW username</label>
+        <input id="username" name="username" type="text" maxlength="20" autocomplete="nickname" spellcheck="false" placeholder="e.g. HabsFan_514" aria-describedby="username-help">
+        <p id="username-help" class="help">Use your betgrw.com username so we can confirm you’re eligible for the prize. It shows on the leaderboard.</p>
       </div>
 
       <div class="phead" aria-hidden="true">
@@ -116,6 +129,8 @@
         <li>Each correct pick is worth one point. Winners and points update automatically as games end.</li>
         <li>Finish ahead of Georges and your name gets the “Beat Georges” mark.</li>
         <li>Postponed or cancelled games don’t count for anyone.</li>
+        <li>Grand prize: the player with the most correct picks wins $100.</li>
+        <li>To be eligible, you need at least a $20 deposit on betgrw.com in the last 30 days. Enter with your betgrw.com username so we can confirm it.</li>
       </ul>
     </details>
   </main>
