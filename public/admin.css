@@ -7,7 +7,7 @@
   --black: #000000;
   --amber: #FFB321;
   --red: #D21F3C;
-  --blue: #1C55C9;
+  --blue: #0940CC;
   --green: #12804A;
   --display: 'Big Shoulders Display', 'Big Shoulders', 'Arial Narrow', 'Roboto Condensed', sans-serif;
   --text: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -284,3 +284,8 @@ tr.is-me { background: #E3ECFB; }
 .remove { background: none; border: 1px solid var(--red); color: var(--red); border-radius: 4px; padding: 6px 12px; font-weight: 600; }
 .remove:hover { background: var(--red); color: #fff; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* Dark header bar for the logo, blue theme */
+.top { max-width: none; background: #0A1128; padding: 14px max(20px, calc((100% - 1040px) / 2)); }
+.brand img { display: block; height: 30px; width: auto; }
+.back { color: #8FB1FF; }
