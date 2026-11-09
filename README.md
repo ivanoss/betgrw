@@ -29,13 +29,22 @@ npm run demo -- live  # games in progress
 ```
 The demo admin password is `demo`.
 
-## Hosting
-Any Node host works (Render, Railway, Fly.io, a VPS). Settings:
-- `ADMIN_PASSWORD` — required for the admin page.
-- `DATA_DIR` — where entries are saved. On Render/Railway, point this at a **persistent disk**, otherwise entries are wiped on every redeploy.
-- `PORT` — usually set by the host.
+## Hosting for free (Render + Upstash)
+Render's free plan wipes files on every restart, so entries are saved in a free Upstash database instead.
 
-Entries are saved as one small JSON file per night in `DATA_DIR`, which is plenty for thousands of players. If you outgrow it, the storage functions (`loadContest`, `writeJSON`) are the only part to swap for a database.
+1. **Upstash:** sign up at upstash.com, create a Redis database (free plan), open it and copy the **REST URL** and **REST token**.
+2. **Render:** sign up at render.com with GitHub, click **New → Blueprint**, pick this repository. `render.yaml` sets everything up on the free plan.
+3. When Render asks, fill in `ADMIN_PASSWORD`, `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+4. Deploy. Your site is at the `onrender.com` address Render shows.
+
+On the free plan the site sleeps after 15 minutes with no visitors; the next visitor waits about a minute while it wakes. Upgrading Render's plan removes that. Page views don't use the database, so Upstash's free limit covers thousands of entries a month.
+
+## Hosting anywhere else
+Any Node host works. Settings:
+- `ADMIN_PASSWORD` — required for the admin page.
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` — save entries in Upstash.
+- `DATA_DIR` — without Upstash, entries are saved as JSON files here. Point it at a persistent disk.
+- `PORT` — usually set by the host.
 
 ## Good to know
 - Players are remembered on their device. They can change their picks from the same phone or browser until puck drop. One username per player per night.

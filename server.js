@@ -1,5 +1,5 @@
 // Beat Georges Pick'em — server
-// Serves the site, pulls live NHL scores, stores entries, grades picks automatically.
+// Serves the site, pulls live NHL games, stores entries, grades picks automatically.
 // No dependencies. Node 18+.
 
 const http = require('http');
@@ -16,37 +16,67 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const NHL_SCORE_URL = date => `https://api-web.nhle.com/v1/score/${date}`;
 const RESERVED = ['georges', 'laraque', 'georgeslaraque', 'admin', 'betgrw', 'moderator'];
 
-fs.mkdirSync(DATA_DIR, { recursive: true });
-
 /* ---------- Dates ---------- */
 // A hockey night runs past midnight, so the slate rolls over at 6 AM Eastern.
 function etDate(d) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
 }
 async function contestDate() {
-  const s = await readJSON(path.join(DATA_DIR, 'settings.json'), {});
+  const s = await getRecord('settings', {});
   if (s.contestDate && /^\d{4}-\d{2}-\d{2}$/.test(s.contestDate)) return s.contestDate;
   return etDate(new Date(Date.now() - 6 * 3600e3));
 }
 
-/* ---------- Storage (JSON files, written atomically, one write at a time) ---------- */
-async function readJSON(file, fallback) {
-  try { return JSON.parse(await fsp.readFile(file, 'utf8')); } catch { return fallback; }
+/* ---------- Storage ----------
+   Upstash Redis when UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are set (free, survives restarts),
+   otherwise JSON files in DATA_DIR. Everything is kept in memory too, so pages never wait on the database:
+   the database is only touched when the server starts and when something changes. */
+const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || '').replace(/\/$/, '');
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || '';
+const useUpstash = !!(UPSTASH_URL && UPSTASH_TOKEN);
+const KEY_PREFIX = 'beatgeorges:';
+
+async function upstash(cmd) {
+  const res = await fetch(UPSTASH_URL, {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + UPSTASH_TOKEN, 'Content-Type': 'application/json' },
+    body: JSON.stringify(cmd),
+    signal: AbortSignal.timeout(8000)
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || json.error) throw new Error('Upstash: ' + (json.error || res.status));
+  return json.result;
+}
+const backend = useUpstash ? {
+  async get(key) { const v = await upstash(['GET', KEY_PREFIX + key]); return v ? JSON.parse(v) : null; },
+  async set(key, value) { await upstash(['SET', KEY_PREFIX + key, JSON.stringify(value)]); }
+} : {
+  async get(key) { try { return JSON.parse(await fsp.readFile(path.join(DATA_DIR, key + '.json'), 'utf8')); } catch { return null; } },
+  async set(key, value) {
+    const file = path.join(DATA_DIR, key + '.json'), tmp = file + '.' + process.pid + '.tmp';
+    await fsp.writeFile(tmp, JSON.stringify(value, null, 2));
+    await fsp.rename(tmp, file);
+  }
+};
+if (!useUpstash) fs.mkdirSync(DATA_DIR, { recursive: true });
+
+const memory = new Map();
+async function getRecord(key, fallback) {
+  if (!memory.has(key)) memory.set(key, (await backend.get(key)) ?? fallback);
+  return structuredClone(memory.get(key));
 }
 let writeChain = Promise.resolve();
-function writeJSON(file, data) {
-  writeChain = writeChain.then(async () => {
-    const tmp = file + '.' + process.pid + '.tmp';
-    await fsp.writeFile(tmp, JSON.stringify(data, null, 2));
-    await fsp.rename(tmp, file);
-  });
-  return writeChain;
+function putRecord(key, value) {
+  const copy = structuredClone(value);
+  const job = writeChain.then(async () => { await backend.set(key, copy); memory.set(key, copy); });
+  writeChain = job.catch(() => {});
+  return job;
 }
-const contestFile = date => path.join(DATA_DIR, `contest-${date}.json`);
 async function loadContest(date) {
-  const c = await readJSON(contestFile(date), {});
+  const c = await getRecord('contest-' + date, {});
   return { expert: c.expert || {}, entries: Array.isArray(c.entries) ? c.entries : [] };
 }
+const saveContest = (date, contest) => putRecord('contest-' + date, contest);
 
 /* ---------- Live NHL games ---------- */
 const cache = new Map(); // date -> { at, games, ttl }
@@ -220,7 +250,7 @@ async function handleEntry(req, res, ip) {
     token = crypto.randomBytes(24).toString('hex');
     contest.entries.push({ username, picks, tokenHash: hashToken(token), created: Date.now(), updated: Date.now() });
   }
-  await writeJSON(contestFile(date), contest);
+  await saveContest(date, contest);
   send(res, 200, { ok: true, username, token, updated: !!mine });
 }
 
@@ -232,7 +262,7 @@ async function handleAdmin(req, res, route) {
   if (route === 'state' && req.method === 'GET') {
     const games = await getGames(date);
     const contest = await loadContest(date);
-    const settings = await readJSON(path.join(DATA_DIR, 'settings.json'), {});
+    const settings = await getRecord('settings', {});
     return send(res, 200, {
       date, override: settings.contestDate || null, locked: isLocked(games), games, expert: contest.expert,
       entries: contest.entries.map(e => ({ username: e.username, created: e.created, score: scorePicks(e.picks, games) }))
@@ -250,20 +280,20 @@ async function handleAdmin(req, res, route) {
       if (p === g.away.abbr || p === g.home.abbr) expert[g.id] = p;
     }
     contest.expert = expert;
-    await writeJSON(contestFile(date), contest);
+    await saveContest(date, contest);
     return send(res, 200, { ok: true, saved: Object.keys(expert).length });
   }
   if (route === 'remove-entry') {
     const contest = await loadContest(date);
     const before = contest.entries.length;
     contest.entries = contest.entries.filter(e => e.username.toLowerCase() !== String(body.username || '').toLowerCase());
-    await writeJSON(contestFile(date), contest);
+    await saveContest(date, contest);
     return send(res, 200, { ok: true, removed: before - contest.entries.length });
   }
   if (route === 'settings') {
     const d = body.contestDate;
     if (d && !/^\d{4}-\d{2}-\d{2}$/.test(d)) return send(res, 400, { error: 'Use a date like 2026-11-14.' });
-    await writeJSON(path.join(DATA_DIR, 'settings.json'), { contestDate: d || null });
+    await putRecord('settings', { contestDate: d || null });
     return send(res, 200, { ok: true });
   }
   send(res, 404, { error: 'Not found' });
@@ -302,4 +332,4 @@ const server = http.createServer(async (req, res) => {
     send(res, 502, { error: 'Tonight’s games couldn’t load. The page will retry on its own.' });
   }
 });
-server.listen(PORT, () => console.log(`Beat Georges running on http://localhost:${PORT}${MOCK_FILE ? ' (sample data)' : ''}${ADMIN_PASSWORD ? '' : ' — admin off: set ADMIN_PASSWORD'}`));
+server.listen(PORT, () => console.log(`Beat Georges running on http://localhost:${PORT}${MOCK_FILE ? ' (sample data)' : ''}${useUpstash ? ' — saving to Upstash' : ' — saving to ' + DATA_DIR}${ADMIN_PASSWORD ? '' : ' — admin off: set ADMIN_PASSWORD'}`));
