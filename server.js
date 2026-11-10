@@ -17,6 +17,9 @@ const NHL_SCORE_URL = date => `https://api-web.nhle.com/v1/score/${date}`;
 const NHL_SCHEDULE_URL = date => `https://api-web.nhle.com/v1/schedule/${date}`;
 const NHL_STANDINGS_URL = 'https://api-web.nhle.com/v1/standings/now';
 const VERSION = (process.env.RENDER_GIT_COMMIT || String(Date.now())).slice(0, 12); // changes on every deploy
+// Anti-spam: how many entries one internet connection can make per Saturday (a family can share one connection)
+const MAX_PER_NETWORK = Math.max(1, Number(process.env.MAX_ENTRIES_PER_NETWORK) || 3);
+const NET_SALT = process.env.ENTRY_SALT || 'bg:' + (process.env.ADMIN_PASSWORD || 'beat-georges');
 const RESERVED = ['georges', 'laraque', 'georgeslaraque', 'admin', 'betgrw', 'moderator'];
 
 /* ---------- Prize pool ----------
@@ -287,6 +290,22 @@ function readBody(req) {
   });
 }
 const hits = new Map();
+// The visitor's real address. Render sits behind Cloudflare, which sets cf-connecting-ip.
+function clientIp(req) {
+  const h = req.headers;
+  return String(h['cf-connecting-ip'] || h['true-client-ip'] || (h['x-forwarded-for'] || '').split(',')[0] || req.socket.remoteAddress || '').trim();
+}
+// A short, anonymous ID for the connection (the address itself is never stored).
+// Phones on IPv6 get a whole block of addresses, so those are grouped by their first 4 parts.
+function networkId(ip) {
+  let key = ip.replace(/^::ffff:/i, '');
+  if (key.includes(':')) key = key.split(':').slice(0, 4).join(':') + '::/64';
+  return crypto.createHash('sha256').update(NET_SALT + '|' + key).digest('hex').slice(0, 10);
+}
+setInterval(() => { // forget old rate-limit records
+  const now = Date.now();
+  for (const [k, list] of hits) if (!list.some(t => now - t < 60000)) hits.delete(k);
+}, 5 * 60000).unref();
 function rateLimited(ip, limit = 20) {
   const now = Date.now(), list = (hits.get(ip) || []).filter(t => now - t < 60000);
   list.push(now); hits.set(ip, list);
@@ -329,12 +348,14 @@ async function handleState(req, res) {
 }
 
 async function handleEntry(req, res, ip) {
-  if (rateLimited(ip)) return send(res, 429, { error: 'Too many tries. Wait a minute and submit again.' });
+  if (rateLimited(networkId(ip))) return send(res, 429, { error: 'Too many tries. Wait a minute and submit again.' });
   const body = await readBody(req);
   const date = await contestDate();
   const games = await getGames(date);
   if (!playable(games).length) return send(res, 400, { error: 'There are no games on Saturday’s slate.' });
   if (isLocked(games)) return send(res, 403, { error: 'Picks locked at the first puck drop.' });
+
+  if (body.website) return send(res, 400, { error: 'Your picks weren’t saved. Try again.' }); // hidden trap field, only bots fill it in
 
   const username = String(body.username || '').trim();
   if (!/^[A-Za-z0-9_.\-]{3,20}$/.test(username)) return send(res, 400, { error: 'Usernames are 3 to 20 letters, numbers, dots, dashes or underscores.' });
@@ -352,11 +373,16 @@ async function handleEntry(req, res, ip) {
   const taken = contest.entries.find(e => e.username.toLowerCase() === username.toLowerCase());
   if (taken && taken !== mine) return send(res, 409, { error: 'That username is taken tonight. Pick another one.' });
 
+  const net = networkId(ip);
+  if (!mine && contest.entries.filter(e => e.net === net).length >= MAX_PER_NETWORK) {
+    return send(res, 429, { error: `This internet connection already has ${MAX_PER_NETWORK} ${MAX_PER_NETWORK === 1 ? 'entry' : 'entries'} this Saturday. It’s one entry per person. To change your picks, use the device you entered with.` });
+  }
+
   let token = null;
-  if (mine) { mine.username = username; mine.picks = picks; mine.updated = Date.now(); }
+  if (mine) { mine.username = username; mine.picks = picks; mine.updated = Date.now(); if (!mine.net) mine.net = net; }
   else {
     token = crypto.randomBytes(24).toString('hex');
-    contest.entries.push({ username, picks, tokenHash: hashToken(token), created: Date.now(), updated: Date.now() });
+    contest.entries.push({ username, picks, tokenHash: hashToken(token), net, created: Date.now(), updated: Date.now() });
   }
   await saveContest(date, contest);
   send(res, 200, { ok: true, username, token, updated: !!mine });
@@ -373,11 +399,11 @@ async function handleAdmin(req, res, route) {
     const settings = await getRecord('settings', {});
     return send(res, 200, {
       date, override: settings.contestDate || null, locked: isLocked(games), games, expert: contest.expert,
-      prizes: PRIZES, pool: PRIZE_POOL,
+      prizes: PRIZES, pool: PRIZE_POOL, maxPerNetwork: MAX_PER_NETWORK,
       entries: (() => {
         const lb = leaderboard(contest, games).rows.filter(r => !r.expert);
         const byName = new Map(lb.map(r => [r.name, r]));
-        return contest.entries.map(e => ({ username: e.username, created: e.created, updated: e.updated, picks: e.picks, score: scorePicks(e.picks, games), rank: byName.get(e.username)?.rank, prize: byName.get(e.username)?.prize || 0 }));
+        return contest.entries.map(e => ({ username: e.username, created: e.created, updated: e.updated, picks: e.picks, net: e.net || '', score: scorePicks(e.picks, games), rank: byName.get(e.username)?.rank, prize: byName.get(e.username)?.prize || 0 }));
       })()
     });
   }
@@ -400,6 +426,15 @@ async function handleAdmin(req, res, route) {
     const contest = await loadContest(date);
     const before = contest.entries.length;
     contest.entries = contest.entries.filter(e => e.username.toLowerCase() !== String(body.username || '').toLowerCase());
+    await saveContest(date, contest);
+    return send(res, 200, { ok: true, removed: before - contest.entries.length });
+  }
+  if (route === 'remove-network') {
+    const net = String(body.net || '');
+    if (!/^[0-9a-f]{10}$/.test(net)) return send(res, 400, { error: 'Unknown connection.' });
+    const contest = await loadContest(date);
+    const before = contest.entries.length;
+    contest.entries = contest.entries.filter(e => e.net !== net);
     await saveContest(date, contest);
     return send(res, 200, { ok: true, removed: before - contest.entries.length });
   }
@@ -433,7 +468,7 @@ async function serveStatic(req, res, pathname) {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
-  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress;
+  const ip = clientIp(req);
   try {
     if (url.pathname === '/api/state' && req.method === 'GET') return await handleState(req, res);
     if (url.pathname === '/api/entry' && req.method === 'POST') return await handleEntry(req, res, ip);

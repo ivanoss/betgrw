@@ -319,3 +319,9 @@ tr.is-me { background: #E3ECFB; }
 .legend i { display: inline-block; width: 14px; height: 4px; background: var(--blue); vertical-align: middle; margin-right: 4px; }
 
 .grid td.prize { font-weight: 700; color: var(--green); }
+.grid td.net { font-size: 12px; color: var(--ink-2); text-align: left; }
+.grid .net-id { font-weight: 600; letter-spacing: .5px; }
+.grid td.net.shared { background: #FFF4E5; color: #8A4B00; }
+.grid .net-n { font-weight: 700; }
+.grid .remove-net { margin-left: 6px; background: none; border: 1px solid #C26A00; color: #8A4B00; border-radius: 4px; padding: 3px 8px; font-size: 12px; font-weight: 600; }
+.grid .remove-net:hover { background: #C26A00; color: #fff; }

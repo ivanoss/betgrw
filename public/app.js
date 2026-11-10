@@ -489,7 +489,7 @@
       const res = await fetch('/api/entry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-entry-token': store.get('bg_token') || '' },
-        body: JSON.stringify({ username, picks: draft })
+        body: JSON.stringify({ username, picks: draft, website: $('#website').value })
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Your picks weren’t saved. Try again.');

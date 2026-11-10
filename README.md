@@ -58,3 +58,10 @@ Any Node host works. Settings:
 - `public/admin.html`, `admin.css`, `admin.js` — the admin page.
 - `public/teams.js` — team colors and names.
 - `scripts/demo.js` — sample games for previewing.
+
+## Stopping multiple entries
+- Each internet connection can make at most 3 entries per Saturday (enough for a family). Change it with the `MAX_ENTRIES_PER_NETWORK` setting on Render.
+- Players can still update their own picks after the cap is reached.
+- A hidden form field catches simple bots, and repeated tries are slowed down.
+- In `/admin`, entries from the same connection are highlighted in orange with a **Remove all** button. Connections are stored as short anonymous codes, never as addresses.
+- The deposit rule is the final check: before paying a prize, confirm the winner's betgrw.com account. Fake usernames won't have deposits.
