@@ -59,7 +59,8 @@
 
   /* ---------- Players' picks grid ---------- */
   let find = '';
-  const when = ms => ms ? new Date(ms).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' }) : '';
+  const when = ms => ms ? new Date(ms).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' }) : '';
+  const money = n => n ? '$' + (Number.isInteger(n) ? String(n) : n.toFixed(2)) : '';
   function sortedEntries() {
     return [...state.entries].sort((a, b) => b.score - a.score || a.username.localeCompare(b.username));
   }
@@ -73,33 +74,32 @@
   function renderGrid() {
     const games = state.games;
     $('#grid-head').innerHTML = `<tr><th class="rk">#</th><th class="who">Player</th>${games.map(g =>
-      `<th>${esc(g.away.abbr)}<small>at ${esc(g.home.abbr)}</small></th>`).join('')}<th>Pts</th><th>Last saved</th><th><span class="sr">Actions</span></th></tr>`;
+      `<th>${esc(g.away.abbr)}<small>at ${esc(g.home.abbr)}</small></th>`).join('')}<th>Pts</th><th>Prize</th><th>Last saved</th><th><span class="sr">Actions</span></th></tr>`;
 
     const list = sortedEntries();
-    let rank = 0;
-    list.forEach((e, i) => { if (i === 0 || e.score !== list[i - 1].score) rank = i + 1; e.rank = rank; });
     const q = find.trim().toLowerCase();
     const shown = q ? list.filter(e => e.username.toLowerCase().includes(q)) : list;
 
     const xs = games.reduce((n, g) => n + (g.winner && state.expert[g.id] === g.winner ? 1 : 0), 0);
     const georgesRow = Object.keys(state.expert).length
-      ? `<tr class="georges"><td class="rk">GL</td><td class="who">Georges Laraque</td>${games.map(g => cell(g, state.expert[g.id], true)).join('')}<td class="pts">${xs}</td><td></td><td></td></tr>`
+      ? `<tr class="georges"><td class="rk">GL</td><td class="who">Georges Laraque</td>${games.map(g => cell(g, state.expert[g.id], true)).join('')}<td class="pts">${xs}</td><td></td><td></td><td></td></tr>`
       : '';
     const rows = shown.map(e => `<tr>
       <td class="rk">${e.rank}</td>
       <td class="who" title="${esc(e.username)}">${esc(e.username)}</td>
       ${games.map(g => cell(g, e.picks && e.picks[g.id], false)).join('')}
       <td class="pts">${e.score}</td>
+      <td class="prize">${esc(money(e.prize))}</td>
       <td class="when">${esc(when(e.updated || e.created))}</td>
       <td><button class="remove" type="button" data-user="${esc(e.username)}">Remove</button></td></tr>`).join('');
-    const cols = games.length + 5;
+    const cols = games.length + 6;
     $('#admin-rows').innerHTML = georgesRow + (rows || `<tr><td colspan="${cols}" class="board-empty">${state.entries.length ? 'No player matches that name.' : 'No entries yet.'}</td></tr>`);
 
     $('#grid-foot').innerHTML = state.entries.length ? `<tr><td></td><td class="who">Picked by</td>${games.map(g => {
       const a = state.entries.filter(e => e.picks && e.picks[g.id] === g.away.abbr).length;
       const h = state.entries.filter(e => e.picks && e.picks[g.id] === g.home.abbr).length;
       return `<td>${esc(g.away.abbr)} ${a}<br>${esc(g.home.abbr)} ${h}</td>`;
-    }).join('')}<td></td><td></td><td></td></tr>` : '';
+    }).join('')}<td></td><td></td><td></td><td></td></tr>` : '';
 
     $('#grid-count').textContent = `${state.entries.length} ${state.entries.length === 1 ? 'player' : 'players'}${q ? `, ${shown.length} shown` : ''}`;
   }
@@ -109,12 +109,11 @@
     if (!state) return;
     const games = state.games;
     const q = v => `"${String(v).replace(/"/g, '""')}"`;
-    const lines = [['Place', 'Player', ...games.map(g => `${g.away.abbr} at ${g.home.abbr}`), 'Points', 'Last saved'].map(q).join(',')];
-    lines.push(['', 'Georges Laraque', ...games.map(g => state.expert[g.id] || ''), '', ''].map(q).join(','));
-    lines.push(['', 'Winner', ...games.map(g => g.winner || ''), '', ''].map(q).join(','));
-    sortedEntries().forEach((e, i, arr) => {
-      const rank = arr.findIndex(x => x.score === e.score) + 1;
-      lines.push([rank, e.username, ...games.map(g => (e.picks && e.picks[g.id]) || ''), e.score, new Date(e.updated || e.created).toISOString()].map(q).join(','));
+    const lines = [['Place', 'Player', ...games.map(g => `${g.away.abbr} at ${g.home.abbr}`), 'Points', 'Prize', 'Last saved'].map(q).join(',')];
+    lines.push(['', 'Georges Laraque', ...games.map(g => state.expert[g.id] || ''), '', '', ''].map(q).join(','));
+    lines.push(['', 'Winner', ...games.map(g => g.winner || ''), '', '', ''].map(q).join(','));
+    sortedEntries().forEach(e => {
+      lines.push([e.rank || '', e.username, ...games.map(g => (e.picks && e.picks[g.id]) || ''), e.score, e.prize ? e.prize.toFixed(2) : '', new Date(e.updated || e.created).toISOString()].map(q).join(','));
     });
     const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');

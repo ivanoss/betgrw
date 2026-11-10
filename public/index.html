@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=__V__">
 </head>
 <body>
 <a class="skip" href="#picks">Skip to your picks</a>
@@ -44,43 +44,48 @@
   </div>
 </div>
 
-<!-- Section header with tabs -->
+<!-- Contest header -->
 <section class="hub" aria-labelledby="hub-h">
-  <div class="wrap">
-    <div class="hub-top">
+  <div class="wrap hub-in">
+    <div class="hub-id">
       <span class="hub-badge" aria-hidden="true">GL</span>
-      <div class="hub-title">
+      <div>
         <h1 id="hub-h">Beat Georges</h1>
-        <p class="hub-meta"><span>Saturday NHL Pick’em</span><span id="date-label"></span></p>
-      </div>
-      <div class="hub-duel" aria-live="polite">
-        <div class="hd-side"><span class="hd-name">Georges</span><span class="hd-num" id="sb-georges">0</span></div>
-        <span class="hd-sep">:</span>
-        <div class="hd-side you"><span class="hd-num" id="sb-you">–</span><span class="hd-name" id="sb-you-label">You</span></div>
+        <p class="hub-meta">Saturday NHL Pick’em</p>
       </div>
     </div>
-    <p class="hub-status"><span id="sb-strip">Loading Saturday’s games</span> <span class="hub-lock" id="lockline"></span></p>
+    <dl class="hub-facts">
+      <div><dt>Date</dt><dd id="date-label">Saturday</dd></div>
+      <div><dt>Games</dt><dd id="f-games">–</dd></div>
+      <div><dt id="lock-label">Picks lock</dt><dd id="lockline">–</dd></div>
+    </dl>
+    <div class="hub-duel" aria-live="polite">
+      <div class="hd-side"><span class="hd-name">Georges</span><span class="hd-num" id="sb-georges">0</span></div>
+      <span class="hd-sep">:</span>
+      <div class="hd-side you"><span class="hd-num" id="sb-you">–</span><span class="hd-name" id="sb-you-label">You</span></div>
+    </div>
   </div>
+  <div class="wrap"><p class="hub-status" id="sb-strip">Loading Saturday’s games</p></div>
 </section>
 
-<!-- Prize -->
+<!-- Prize pool (amounts come from the server's PRIZES list) -->
 <div class="wrap">
   <section class="prize" aria-labelledby="prize-h">
     <div class="prize-amount">
-      <span class="prize-cur">$</span><span class="prize-num">100</span>
+      <span class="prize-num" id="pool">$1,000</span>
+      <span class="prize-sub">prize pool</span>
     </div>
     <div class="prize-copy">
-      <p class="prize-kicker">Grand prize this Saturday</p>
-      <h2 class="prize-head" id="prize-h">Most correct picks wins $100</h2>
+      <h2 class="prize-head" id="prize-h">The top 10 split <span id="pool-2">$1,000</span> this Saturday</h2>
+      <ol class="payouts" id="payouts" aria-label="Prize for each place">
+        <li><span>1st</span><b>$300</b></li><li><span>2nd</span><b>$200</b></li><li><span>3rd</span><b>$125</b></li><li><span>4th</span><b>$100</b></li><li><span>5th</span><b>$75</b></li>
+        <li><span>6th</span><b>$60</b></li><li><span>7th</span><b>$45</b></li><li><span>8th</span><b>$35</b></li><li><span>9th</span><b>$30</b></li><li><span>10th</span><b>$30</b></li>
+      </ol>
       <p class="prize-rule">
         <svg class="prize-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="4.6" r="1" fill="currentColor"/></svg>
         <span>To be eligible, you need to deposit at least <b>$20</b> on betgrw.com in the <b>last 30 days</b>.</span>
       </p>
     </div>
-    <p class="prize-rule prize-rule-m">
-      <svg class="prize-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="4.6" r="1" fill="currentColor"/></svg>
-      <span>To be eligible, you need to deposit at least <b>$20</b> on betgrw.com in the <b>last 30 days</b>.</span>
-    </p>
     <a class="prize-cta" href="https://betgrw.com" target="_blank" rel="noopener">Deposit at betgrw.com</a>
   </section>
 </div>
@@ -145,7 +150,10 @@
         <li>Each correct pick is worth one point. Winners and points update automatically as games end.</li>
         <li>Finish ahead of Georges and your name gets the “Beat Georges” mark.</li>
         <li>Postponed or cancelled games don’t count for anyone.</li>
-        <li>Grand prize: the player with the most correct picks wins $100.</li>
+        <li>Prize pool: the top 10 players split $1,000. 1st $300, 2nd $200, 3rd $125, 4th $100, 5th $75, 6th $60, 7th $45, 8th $35, 9th $30, 10th $30.</li>
+        <li>Ties: players with the same score share the prizes for the places they cover. For example, two players tied for 2nd split the 2nd and 3rd place prizes.</li>
+        <li>Georges is shown on the leaderboard for fun but doesn’t take a place or a prize.</li>
+        <li>If a top-10 player isn’t eligible, the next eligible player moves up.</li>
         <li>To be eligible, you need to deposit at least $20 on betgrw.com in the last 30 days. Enter with your betgrw.com username so we can confirm it.</li>
       </ul>
     </details>
@@ -158,10 +166,11 @@
         <span class="block-aside" id="board-sub"></span>
       </header>
       <table>
-        <thead><tr><th scope="col">#</th><th scope="col">Player</th><th scope="col" class="num">Pts</th></tr></thead>
+        <thead><tr><th scope="col">#</th><th scope="col">Player</th><th scope="col" class="num">Pts</th><th scope="col" class="num prize-col">Prize</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
       <button class="more" id="more" type="button" hidden>Show all players</button>
+      <p class="board-note" id="board-note"></p>
     </section>
 
     <section class="block nhl" id="nhl" aria-labelledby="nhl-h" hidden>
@@ -205,7 +214,7 @@
   </div>
 </footer>
 
-<script src="teams.js"></script>
-<script src="app.js"></script>
+<script src="teams.js?v=__V__"></script>
+<script src="app.js?v=__V__"></script>
 </body>
 </html>

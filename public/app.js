@@ -15,10 +15,12 @@
   let showAll = false;
   let pollTimer = null;
 
-  const timeFmt = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
-  const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' });
+  const LOCALE = 'en-US'; // keep dates and times in English to match the page
+  const timeFmt = new Intl.DateTimeFormat(LOCALE, { hour: 'numeric', minute: '2-digit' });
+  const dayFmt = new Intl.DateTimeFormat(LOCALE, { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' });
+  const shortDayFmt = new Intl.DateTimeFormat(LOCALE, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
   const fmtTime = iso => timeFmt.format(new Date(iso));
-  const wdFmt = new Intl.DateTimeFormat(undefined, { weekday: 'long' });
+  const wdFmt = new Intl.DateTimeFormat(LOCALE, { weekday: 'long' });
   const fmtDay = ms => {
     const d = new Date(ms), now = new Date();
     if (d.toDateString() === now.toDateString()) return 'today';
@@ -129,9 +131,9 @@
   }
 
   function renderDuel() {
-    const dayText = dayFmt.format(new Date(data.date + 'T12:00:00Z'));
-    $('#date-label').textContent = dayText;
-    $('#day-label').textContent = dayText;
+    const day = new Date(data.date + 'T12:00:00Z');
+    $('#date-label').textContent = shortDayFmt.format(day);
+    $('#day-label').textContent = dayFmt.format(day);
     const games = playable();
     const live = games.filter(g => g.state === 'live').length;
     const final = games.filter(g => g.state === 'final').length;
@@ -150,8 +152,23 @@
     } else if (!live && !final) s = `${games.length} games on Saturday. First puck drop at ${fmtTime(data.lockAt)}.`;
     else s = `${final} of ${games.length} games final${live ? `, ${live} in progress` : ''}.`;
     $('#sb-strip').textContent = s;
-    $('#lockline').textContent = !data.locked && data.lockAt ? `Picks lock in ${untilText(data.lockAt - Date.now())}` : '';
+    $('#f-games').textContent = games.length ? `${games.length} NHL games` : 'No games';
+    if (!data.locked && data.lockAt) { $('#lock-label').textContent = 'Picks lock in'; $('#lockline').textContent = untilText(data.lockAt - Date.now()); }
+    else { $('#lock-label').textContent = 'Status'; $('#lockline').textContent = !games.length ? '–' : final === games.length ? 'All games final' : live ? `${live} live now` : 'Picks locked'; }
+    renderPrize();
     renderHeader(live, final, games.length);
+  }
+
+  /* ---------- Prize pool ---------- */
+  const money = n => '$' + (Number.isInteger(n) ? n.toLocaleString(LOCALE) : n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  const ordinalPlace = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
+  function renderPrize() {
+    const lb = data.leaderboard;
+    if (!lb.prizes || !lb.prizes.length) return;
+    $('#pool').textContent = money(lb.pool);
+    $('#pool-2').textContent = money(lb.pool);
+    $('#prize-h').firstChild.textContent = `The top ${lb.prizes.length} split `;
+    $('#payouts').innerHTML = lb.prizes.map((p, i) => `<li><span>${ordinalPlace(i + 1)}</span><b>${money(p)}</b></li>`).join('');
   }
 
   /* ---------- Header: status pill and your entry ---------- */
@@ -304,16 +321,23 @@
       shown = rows.filter(r => keep.has(r));
       hidden = rows.length - shown.length;
     }
-    const row = r => `<tr class="${r.expert ? 'is-georges' : ''} ${isMe(r) ? 'is-me' : ''} ${r.rank === 1 && !r.expert && graded ? 'top' : ''}">
-      <td class="place">${r.rank}</td>
+    const showPrize = graded > 0;
+    $('#board').classList.toggle('with-prize', showPrize);
+    const row = r => `<tr class="${r.expert ? 'is-georges' : ''} ${isMe(r) ? 'is-me' : ''} ${r.rank === 1 && graded ? 'top' : ''}">
+      <td class="place">${r.expert ? 'GL' : r.rank}</td>
       <td class="player">${esc(r.name)}${isMe(r) ? '<span class="mark me">You</span>' : ''}${!r.expert && g && graded && r.score > g.score ? '<span class="mark beat">Beat Georges</span>' : ''}</td>
-      <td class="pts">${r.score}</td></tr>`;
+      <td class="pts">${r.score}</td>
+      <td class="num prize-col">${!r.expert && r.prize ? money(r.prize) : ''}</td></tr>`;
     let html = '';
     shown.forEach((r, i) => {
-      if (i > 0 && rows.indexOf(r) - rows.indexOf(shown[i - 1]) > 1) html += '<tr class="gap"><td colspan="3">…</td></tr>';
+      if (i > 0 && rows.indexOf(r) - rows.indexOf(shown[i - 1]) > 1) html += '<tr class="gap"><td colspan="4">…</td></tr>';
       html += row(r);
     });
-    $('#rows').innerHTML = rows.length ? html : '<tr><td colspan="3" class="board-empty">No entries yet. Make your picks and be the first name here.</td></tr>';
+    $('#rows').innerHTML = rows.length ? html : '<tr><td colspan="4" class="board-empty">No entries yet. Make your picks and be the first name here.</td></tr>';
+    const allFinal = graded && graded === total;
+    $('#board-note').textContent = !showPrize ? `Top ${data.leaderboard.prizes.length} split ${money(data.leaderboard.pool)}. Prizes show here once the first game ends.`
+      : allFinal ? 'Final prizes. Ties share the prizes for the places they cover. Winners must be eligible.'
+      : 'Prizes as things stand now. Ties share the prizes for the places they cover. Winners must be eligible.';
     const more = $('#more');
     more.hidden = !hidden && !showAll;
     more.textContent = showAll ? 'Show top 10' : 'Show full leaderboard';

@@ -16,7 +16,13 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const NHL_SCORE_URL = date => `https://api-web.nhle.com/v1/score/${date}`;
 const NHL_SCHEDULE_URL = date => `https://api-web.nhle.com/v1/schedule/${date}`;
 const NHL_STANDINGS_URL = 'https://api-web.nhle.com/v1/standings/now';
+const VERSION = (process.env.RENDER_GIT_COMMIT || String(Date.now())).slice(0, 12); // changes on every deploy
 const RESERVED = ['georges', 'laraque', 'georgeslaraque', 'admin', 'betgrw', 'moderator'];
+
+/* ---------- Prize pool ----------
+   Edit these amounts to change the payouts. Place 1 first. They add up to the pool shown on the site. */
+const PRIZES = [300, 200, 125, 100, 75, 60, 45, 35, 30, 30];
+const PRIZE_POOL = PRIZES.reduce((a, b) => a + b, 0);
 
 /* ---------- Dates ----------
    The contest is Saturday games only.
@@ -232,13 +238,26 @@ function scorePicks(picks, games) {
 }
 function leaderboard(contest, games) {
   const graded = games.filter(g => g.winner).length;
-  const rows = contest.entries.map(e => ({ name: e.username, score: scorePicks(e.picks, games) }));
+  const fans = contest.entries.map(e => ({ name: e.username, score: scorePicks(e.picks, games) }));
+  fans.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+  // Ranks and prizes count players only. Tied players share the prizes for the places they cover.
+  for (let i = 0; i < fans.length;) {
+    let j = i;
+    while (j < fans.length && fans[j].score === fans[i].score) j++;
+    let pot = 0;
+    for (let k = i; k < j; k++) pot += PRIZES[k] || 0;
+    const each = pot ? Math.floor(pot / (j - i) * 100) / 100 : 0;
+    for (let k = i; k < j; k++) { fans[k].rank = i + 1; fans[k].prize = each; fans[k].tied = j - i > 1; }
+    i = j;
+  }
+  const rows = [...fans];
   const expertCount = playable(games).filter(g => contest.expert[g.id]).length;
-  if (expertCount) rows.push({ name: 'Georges Laraque', score: scorePicks(contest.expert, games), expert: true });
-  rows.sort((a, b) => b.score - a.score || (b.expert ? 1 : 0) - (a.expert ? 1 : 0) || a.name.localeCompare(b.name));
-  let rank = 0;
-  rows.forEach((r, i) => { if (i === 0 || r.score !== rows[i - 1].score) rank = i + 1; r.rank = rank; });
-  return { graded, rows };
+  if (expertCount) {
+    const xs = scorePicks(contest.expert, games);
+    const at = rows.findIndex(r => r.score <= xs); // Georges sits above players he ties with
+    rows.splice(at === -1 ? rows.length : at, 0, { name: 'Georges Laraque', score: xs, expert: true, rank: null, prize: 0 });
+  }
+  return { graded, rows, prizes: PRIZES, pool: PRIZE_POOL };
 }
 const hashToken = t => crypto.createHash('sha256').update(String(t)).digest('hex');
 function findByToken(contest, token) {
@@ -354,7 +373,12 @@ async function handleAdmin(req, res, route) {
     const settings = await getRecord('settings', {});
     return send(res, 200, {
       date, override: settings.contestDate || null, locked: isLocked(games), games, expert: contest.expert,
-      entries: contest.entries.map(e => ({ username: e.username, created: e.created, updated: e.updated, picks: e.picks, score: scorePicks(e.picks, games) }))
+      prizes: PRIZES, pool: PRIZE_POOL,
+      entries: (() => {
+        const lb = leaderboard(contest, games).rows.filter(r => !r.expert);
+        const byName = new Map(lb.map(r => [r.name, r]));
+        return contest.entries.map(e => ({ username: e.username, created: e.created, updated: e.updated, picks: e.picks, score: scorePicks(e.picks, games), rank: byName.get(e.username)?.rank, prize: byName.get(e.username)?.prize || 0 }));
+      })()
     });
   }
   if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' });
@@ -394,11 +418,12 @@ async function serveStatic(req, res, pathname) {
   const file = path.normalize(path.join(PUBLIC_DIR, pathname));
   if (!file.startsWith(PUBLIC_DIR + path.sep)) return send(res, 404, 'Not found');
   try {
-    const data = await fsp.readFile(file);
+    let data = await fsp.readFile(file);
     const ext = path.extname(file);
+    if (ext === '.html') data = Buffer.from(data.toString('utf8').replaceAll('__V__', VERSION));
     res.writeHead(200, {
       'Content-Type': MIME[ext] || 'application/octet-stream',
-      'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=300',
+      'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=86400',
       'X-Content-Type-Options': 'nosniff',
       'Content-Security-Policy': "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://assets.nhle.com; connect-src 'self'; frame-ancestors 'self'"
     });

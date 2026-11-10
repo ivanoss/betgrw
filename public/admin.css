@@ -317,3 +317,5 @@ tr.is-me { background: #E3ECFB; }
 .grid .when { font-size: 12px; color: var(--ink-2); font-weight: 400; }
 .legend { margin: 8px 0 0; font-size: 13px; color: var(--ink-2); }
 .legend i { display: inline-block; width: 14px; height: 4px; background: var(--blue); vertical-align: middle; margin-right: 4px; }
+
+.grid td.prize { font-weight: 700; color: var(--green); }
