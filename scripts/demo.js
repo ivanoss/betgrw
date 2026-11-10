@@ -5,14 +5,19 @@ const path = require('path');
 
 const mode = process.argv[2] || 'pre';
 const now = Date.now();
-const date = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(now - 6 * 3600e3));
+// Same Saturday the server picks (see saturdayFor in server.js)
+const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(now - 6 * 3600e3));
+const sat = new Date(today + 'T12:00:00Z'), dow = sat.getUTCDay();
+sat.setUTCDate(sat.getUTCDate() + (dow === 0 ? -1 : dow === 1 ? -2 : 6 - dow));
+const date = sat.toISOString().slice(0, 10);
 const matchups = [
   ['MTL', 'TOR'], ['BOS', 'NYR'], ['OTT', 'DET'], ['FLA', 'TBL'], ['PIT', 'PHI'],
   ['WPG', 'MIN'], ['COL', 'DAL'], ['EDM', 'CGY'], ['VAN', 'SEA']
 ];
 const offsets = [0, 0, 0, 0, 30, 60, 60, 180, 180]; // minutes after first puck drop
 const live = mode === 'live';
-const first = live ? now - 95 * 60e3 : now + 2 * 3600e3;
+const satEvening = Date.parse(date + 'T23:00:00Z'); // about 6-7 PM Eastern on Saturday
+const first = live ? now - 95 * 60e3 : (satEvening > now ? satEvening : now + 2 * 3600e3);
 
 const games = matchups.map(([a, h], i) => {
   const start = new Date(first + offsets[i] * 60e3);

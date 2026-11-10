@@ -18,18 +18,24 @@
   const timeFmt = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
   const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' });
   const fmtTime = iso => timeFmt.format(new Date(iso));
+  const wdFmt = new Intl.DateTimeFormat(undefined, { weekday: 'long' });
+  const fmtDay = ms => {
+    const d = new Date(ms), now = new Date();
+    if (d.toDateString() === now.toDateString()) return 'today';
+    return 'on ' + wdFmt.format(d);
+  };
 
   /* ---------- Data ---------- */
   async function load() {
     try {
       const res = await fetch('/api/state', { headers: { 'x-entry-token': store.get('bg_token') || '' }, cache: 'no-store' });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Tonight’s games couldn’t load.');
+      if (!res.ok) throw new Error(json.error || 'Saturday’s games couldn’t load.');
       data = json;
       syncDraft();
       render();
     } catch (err) {
-      if (!data) $('#sb-strip').textContent = 'Tonight’s games couldn’t load. Retrying shortly.';
+      if (!data) $('#sb-strip').textContent = 'Saturday’s games couldn’t load. Retrying shortly.';
     } finally {
       clearTimeout(pollTimer);
       const live = data && data.games.some(g => g.state === 'live');
@@ -66,7 +72,9 @@
     const m = Math.max(0, Math.round(ms / 60000));
     if (m < 60) return m + ' min';
     const h = Math.floor(m / 60), r = m % 60;
-    return h + ' h' + (r ? ' ' + r + ' min' : '');
+    if (h < 24) return h + ' h' + (r ? ' ' + r + ' min' : '');
+    const d = Math.floor(h / 24), rh = h % 24;
+    return d + (d === 1 ? ' day' : ' days') + (rh ? ' ' + rh + ' h' : '');
   }
   const georgesRow = () => data.leaderboard.rows.find(r => r.expert);
 
@@ -81,7 +89,7 @@
 
   function renderStrip() {
     const el = $('#strip');
-    if (!data.games.length) { el.innerHTML = '<li class="chip"><span class="chip-status">No games tonight</span></li>'; return; }
+    if (!data.games.length) { el.innerHTML = '<li class="chip"><span class="chip-status">No games this Saturday</span></li>'; return; }
     el.innerHTML = data.games.map(g => {
       const team = t => {
         const cls = g.winner ? (g.winner === t.abbr ? 'won' : 'lost') : '';
@@ -116,13 +124,13 @@
     $('#you-avatar').textContent = data.me ? data.me.username.slice(0, 2).toUpperCase() : '?';
 
     let s;
-    if (!games.length) s = 'No NHL games tonight. The next slate shows up here automatically.';
+    if (!games.length) s = 'No NHL games this Saturday. The next Saturday shows up here automatically.';
     else if (final === games.length) {
       if (!data.me) s = `All ${games.length} games are final. Georges got ${gs} right.`;
-      else if (data.me.score > gs) s = 'All games final. You beat Georges tonight.';
+      else if (data.me.score > gs) s = 'All games final. You beat Georges this Saturday.';
       else if (data.me.score < gs) s = 'All games final. Georges wins this one.';
       else s = 'All games final. You tied Georges.';
-    } else if (!live && !final) s = `${games.length} games tonight. First puck drop at ${fmtTime(data.lockAt)}.`;
+    } else if (!live && !final) s = `${games.length} games on Saturday. First puck drop at ${fmtTime(data.lockAt)}.`;
     else s = `${final} of ${games.length} games final${live ? `, ${live} in progress` : ''}.`;
     $('#sb-strip').textContent = s;
     $('#lockline').textContent = !data.locked && data.lockAt ? `Picks lock in ${untilText(data.lockAt - Date.now())}` : '';
@@ -132,7 +140,7 @@
     const games = data.games.filter(g => data.expert[g.id]);
     const list = $('#tickets');
     if (!games.length) {
-      list.innerHTML = `<li class="empty">${data.games.length ? 'Georges hasn’t posted tonight’s picks yet. Check back before the first puck drop.' : 'No games tonight. Georges will be back for the next slate.'}</li>`;
+      list.innerHTML = `<li class="empty">${data.games.length ? 'Georges hasn’t posted his Saturday picks yet. Check back before the first puck drop.' : 'No games this Saturday. Georges will be back next Saturday.'}</li>`;
       $('#x-record').textContent = '0–0';
       return;
     }
@@ -149,7 +157,7 @@
         <span class="xres">${esc(res)}</span></li>`;
     }).join('');
     $('#x-record').textContent = `${w}–${l}`;
-    $('#georges-sub').textContent = w + l ? `${w} right out of ${w + l} finished so far` : 'His winner in every game tonight';
+    $('#georges-sub').textContent = w + l ? `${w} right out of ${w + l} finished so far` : 'His winner in every Saturday game';
   }
 
   function oddBtn(g, t, home) {
@@ -176,7 +184,7 @@
   function renderGames() {
     const list = $('#games');
     if (!data.games.length) {
-      list.innerHTML = '<li class="empty">No NHL games on the schedule tonight. The next slate will show up here automatically.</li>';
+      list.innerHTML = '<li class="empty">No NHL games on the schedule this Saturday. The next Saturday will show up here automatically.</li>';
     } else {
       list.innerHTML = data.games.map(g => {
         const team = t => {
@@ -221,7 +229,7 @@
       btn.disabled = saving || !total || n !== total || same;
       btn.textContent = saving ? 'Saving' : same ? 'Picks saved' : data.me ? 'Update picks' : 'Submit picks';
       $('#lock-sub').textContent = data.lockAt
-        ? `Pick the winner of every game. Picks lock at ${fmtTime(data.lockAt)}.`
+        ? `Pick the winner of every Saturday game. Picks lock ${fmtDay(data.lockAt)} at ${fmtTime(data.lockAt)}.`
         : 'Pick the winner of every game. Overtime and shootouts count.';
     }
   }

@@ -101,7 +101,7 @@
   $('#date-auto').addEventListener('click', async () => {
     try {
       await api('settings', { contestDate: null });
-      say('#date-status', 'Back to automatic. The site follows tonight’s slate.', 'ok');
+      say('#date-status', 'Back to automatic. The site follows Saturday games.', 'ok');
       await load();
     } catch (err) { say('#date-status', err.message, 'error'); }
   });

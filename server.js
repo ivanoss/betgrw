@@ -14,17 +14,28 @@ const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(__dirname, 'data
 const MOCK_FILE = process.env.MOCK_FILE ? path.resolve(process.env.MOCK_FILE) : null;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const NHL_SCORE_URL = date => `https://api-web.nhle.com/v1/score/${date}`;
+const NHL_SCHEDULE_URL = date => `https://api-web.nhle.com/v1/schedule/${date}`;
 const RESERVED = ['georges', 'laraque', 'georgeslaraque', 'admin', 'betgrw', 'moderator'];
 
-/* ---------- Dates ---------- */
-// A hockey night runs past midnight, so the slate rolls over at 6 AM Eastern.
+/* ---------- Dates ----------
+   The contest is Saturday games only.
+   Sunday and Monday still show last Saturday's results (so the winner can be checked).
+   From Tuesday 6 AM Eastern, the site moves on to the coming Saturday so players can pick all week. */
 function etDate(d) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+}
+function saturdayFor(now = Date.now()) {
+  const today = etDate(new Date(now - 6 * 3600e3)); // a hockey night runs past midnight
+  const d = new Date(today + 'T12:00:00Z');
+  const dow = d.getUTCDay(); // 0 Sun ... 6 Sat
+  const shift = dow === 0 ? -1 : dow === 1 ? -2 : 6 - dow; // Sun/Mon: last Saturday; Tue-Sat: this Saturday
+  d.setUTCDate(d.getUTCDate() + shift);
+  return d.toISOString().slice(0, 10);
 }
 async function contestDate() {
   const s = await getRecord('settings', {});
   if (s.contestDate && /^\d{4}-\d{2}-\d{2}$/.test(s.contestDate)) return s.contestDate;
-  return etDate(new Date(Date.now() - 6 * 3600e3));
+  return saturdayFor();
 }
 
 /* ---------- Storage ----------
@@ -117,9 +128,18 @@ async function getGames(date) {
     let raw;
     if (MOCK_FILE) raw = JSON.parse(await fsp.readFile(MOCK_FILE, 'utf8'));
     else {
-      const res = await fetch(NHL_SCORE_URL(date), { headers: { 'User-Agent': 'BeatGeorgesPickem/1.0' }, signal: AbortSignal.timeout(8000) });
-      if (!res.ok) throw new Error('NHL API ' + res.status);
-      raw = await res.json();
+      const get = async url => {
+        const res = await fetch(url, { headers: { 'User-Agent': 'BeatGeorgesPickem/1.0' }, signal: AbortSignal.timeout(8000) });
+        if (!res.ok) throw new Error('NHL API ' + res.status);
+        return res.json();
+      };
+      raw = await get(NHL_SCORE_URL(date));
+      if (!(raw.games || []).length) {
+        // Days ahead, the score feed can be empty; the weekly schedule always lists the games.
+        const sched = await get(NHL_SCHEDULE_URL(date));
+        const day = (sched.gameWeek || []).find(d => d.date === date);
+        raw = { games: (day ? day.games : []).map(g => ({ ...g, gameDate: date })) };
+      }
     }
     const games = (raw.games || [])
       .filter(g => !g.gameDate || g.gameDate === date)
@@ -233,7 +253,7 @@ async function handleEntry(req, res, ip) {
   const body = await readBody(req);
   const date = await contestDate();
   const games = await getGames(date);
-  if (!playable(games).length) return send(res, 400, { error: 'There are no games on tonight’s slate.' });
+  if (!playable(games).length) return send(res, 400, { error: 'There are no games on Saturday’s slate.' });
   if (isLocked(games)) return send(res, 403, { error: 'Picks locked at the first puck drop.' });
 
   const username = String(body.username || '').trim();

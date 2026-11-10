@@ -3,15 +3,15 @@
 Georges Laraque's picks on top, fans' picks and usernames in the middle, a live leaderboard at the bottom. Games and results come from the NHL automatically.
 
 ## What it does on its own
-- Loads tonight's NHL games (it rolls over to the next slate at 6 AM Eastern).
+- Runs on Saturday NHL games only. Last Saturday's results stay up through Monday; on Tuesday at 6 AM Eastern the next Saturday's games open for picks.
 - Shows which games are in progress and marks the winner of each game as soon as it ends. No scores are shown, only winners.
 - Locks every entry at the first puck drop, on the server, so nobody can sneak picks in late.
 - Grades picks as soon as each game goes final, including OT and shootouts.
 - Ignores postponed or cancelled games.
 
-## What you do each night
+## What you do each week
 1. Go to `yoursite.com/admin` and sign in with your admin password.
-2. Tap Georges' winner in each game and press **Save Georges' picks**. His picks appear on the site right away.
+2. Any time from Tuesday until Saturday's first puck drop, tap Georges' winner in each Saturday game and press **Save Georges' picks**. His picks appear on the site right away.
 3. That's it. Use the Players list to remove an entry with an offensive username.
 
 ## Run it
