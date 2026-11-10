@@ -52,15 +52,77 @@
       ${side(g, g.away, false)}
       <div class="mid"><span class="mid-main">${esc(g.state === 'upcoming' ? fmt.format(new Date(g.start)) : g.state === 'final' ? (g.winner ? g.winner + ' wins' : 'Final') : g.state === 'live' ? 'Live' : 'Postponed')}</span></div>
       ${side(g, g.home, true)}</li>`).join('') : '<li class="empty">No games on this date.</li>';
-    $('#admin-rows').innerHTML = state.entries.length ? state.entries.map(e => `<tr>
-      <td class="player">${esc(e.username)}</td>
-      <td>${new Date(e.created).toLocaleString()}</td>
-      <td class="pts">${e.score}</td>
-      <td class="num"><button class="remove" type="button" data-user="${esc(e.username)}">Remove</button></td></tr>`).join('')
-      : '<tr><td colspan="4" class="board-empty">No entries yet.</td></tr>';
+    renderGrid();
     $('#date').value = state.override || '';
   }
 
+
+  /* ---------- Players' picks grid ---------- */
+  let find = '';
+  const when = ms => ms ? new Date(ms).toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' }) : '';
+  function sortedEntries() {
+    return [...state.entries].sort((a, b) => b.score - a.score || a.username.localeCompare(b.username));
+  }
+  function cell(g, pick, georges) {
+    if (!pick) return '<td class="pick">–</td>';
+    let cls = 'pick';
+    if (g.winner) cls += pick === g.winner ? ' right' : ' wrong';
+    if (!georges && state.expert[g.id] === pick) cls += ' same';
+    return `<td class="${cls}">${esc(pick)}</td>`;
+  }
+  function renderGrid() {
+    const games = state.games;
+    $('#grid-head').innerHTML = `<tr><th class="rk">#</th><th class="who">Player</th>${games.map(g =>
+      `<th>${esc(g.away.abbr)}<small>at ${esc(g.home.abbr)}</small></th>`).join('')}<th>Pts</th><th>Last saved</th><th><span class="sr">Actions</span></th></tr>`;
+
+    const list = sortedEntries();
+    let rank = 0;
+    list.forEach((e, i) => { if (i === 0 || e.score !== list[i - 1].score) rank = i + 1; e.rank = rank; });
+    const q = find.trim().toLowerCase();
+    const shown = q ? list.filter(e => e.username.toLowerCase().includes(q)) : list;
+
+    const xs = games.reduce((n, g) => n + (g.winner && state.expert[g.id] === g.winner ? 1 : 0), 0);
+    const georgesRow = Object.keys(state.expert).length
+      ? `<tr class="georges"><td class="rk">GL</td><td class="who">Georges Laraque</td>${games.map(g => cell(g, state.expert[g.id], true)).join('')}<td class="pts">${xs}</td><td></td><td></td></tr>`
+      : '';
+    const rows = shown.map(e => `<tr>
+      <td class="rk">${e.rank}</td>
+      <td class="who" title="${esc(e.username)}">${esc(e.username)}</td>
+      ${games.map(g => cell(g, e.picks && e.picks[g.id], false)).join('')}
+      <td class="pts">${e.score}</td>
+      <td class="when">${esc(when(e.updated || e.created))}</td>
+      <td><button class="remove" type="button" data-user="${esc(e.username)}">Remove</button></td></tr>`).join('');
+    const cols = games.length + 5;
+    $('#admin-rows').innerHTML = georgesRow + (rows || `<tr><td colspan="${cols}" class="board-empty">${state.entries.length ? 'No player matches that name.' : 'No entries yet.'}</td></tr>`);
+
+    $('#grid-foot').innerHTML = state.entries.length ? `<tr><td></td><td class="who">Picked by</td>${games.map(g => {
+      const a = state.entries.filter(e => e.picks && e.picks[g.id] === g.away.abbr).length;
+      const h = state.entries.filter(e => e.picks && e.picks[g.id] === g.home.abbr).length;
+      return `<td>${esc(g.away.abbr)} ${a}<br>${esc(g.home.abbr)} ${h}</td>`;
+    }).join('')}<td></td><td></td><td></td></tr>` : '';
+
+    $('#grid-count').textContent = `${state.entries.length} ${state.entries.length === 1 ? 'player' : 'players'}${q ? `, ${shown.length} shown` : ''}`;
+  }
+  $('#find').addEventListener('input', e => { find = e.target.value; if (state) renderGrid(); });
+
+  $('#csv').addEventListener('click', () => {
+    if (!state) return;
+    const games = state.games;
+    const q = v => `"${String(v).replace(/"/g, '""')}"`;
+    const lines = [['Place', 'Player', ...games.map(g => `${g.away.abbr} at ${g.home.abbr}`), 'Points', 'Last saved'].map(q).join(',')];
+    lines.push(['', 'Georges Laraque', ...games.map(g => state.expert[g.id] || ''), '', ''].map(q).join(','));
+    lines.push(['', 'Winner', ...games.map(g => g.winner || ''), '', ''].map(q).join(','));
+    sortedEntries().forEach((e, i, arr) => {
+      const rank = arr.findIndex(x => x.score === e.score) + 1;
+      lines.push([rank, e.username, ...games.map(g => (e.picks && e.picks[g.id]) || ''), e.score, new Date(e.updated || e.created).toISOString()].map(q).join(','));
+    });
+    const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `picks-${state.date}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
   $('#login').addEventListener('submit', e => { e.preventDefault(); pw = $('#pw').value; load(); });
 
   $('#admin-games').addEventListener('click', e => {

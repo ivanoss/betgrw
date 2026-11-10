@@ -43,13 +43,23 @@
 
     <section class="block">
       <div class="block-head">
-        <h2>Players</h2>
-        <p class="block-sub">Remove an entry with an offensive username or a duplicate account.</p>
+        <h2>Players’ picks</h2>
+        <p class="block-sub">Every player’s pick in every game, best score first. Green is right, red is wrong.</p>
       </div>
-      <div class="table-wrap">
-        <table><thead><tr><th>Player</th><th>Entered</th><th class="num">Points</th><th class="num"><span class="sr">Actions</span></th></tr></thead>
-        <tbody id="admin-rows"></tbody></table>
+      <div class="grid-tools">
+        <label for="find" class="sr">Find a player</label>
+        <input id="find" type="search" placeholder="Find a player" autocomplete="off">
+        <span class="grid-count" id="grid-count"></span>
+        <button class="text-btn" id="csv" type="button">Download as spreadsheet (CSV)</button>
       </div>
+      <div class="grid-wrap">
+        <table class="grid">
+          <thead id="grid-head"></thead>
+          <tbody id="admin-rows"></tbody>
+          <tfoot id="grid-foot"></tfoot>
+        </table>
+      </div>
+      <p class="legend"><i></i>Underlined: same pick as Georges. The bottom row shows how many players picked each team.</p>
       <p class="status" id="rows-status" role="status"></p>
     </section>
 

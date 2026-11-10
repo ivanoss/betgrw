@@ -293,7 +293,7 @@ async function handleAdmin(req, res, route) {
     const settings = await getRecord('settings', {});
     return send(res, 200, {
       date, override: settings.contestDate || null, locked: isLocked(games), games, expert: contest.expert,
-      entries: contest.entries.map(e => ({ username: e.username, created: e.created, score: scorePicks(e.picks, games) }))
+      entries: contest.entries.map(e => ({ username: e.username, created: e.created, updated: e.updated, picks: e.picks, score: scorePicks(e.picks, games) }))
     });
   }
   if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' });
