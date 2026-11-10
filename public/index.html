@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Beat Georges | BetGRW Pick’em</title>
+<title data-i18n="doc.title">Beat Georges | BetGRW Pick’em</title>
 <meta name="description" content="Georges Laraque picks a winner in every NHL game on Saturday. Make your picks, see the winners come in and find out if you finish ahead of him.">
 <meta name="theme-color" content="#0A1128">
 <meta property="og:image" content="/apple-touch-icon.png">
@@ -16,24 +16,25 @@
 <link rel="stylesheet" href="styles.css?v=__V__">
 </head>
 <body>
-<a class="skip" href="#picks">Skip to your picks</a>
+<a class="skip" href="#picks" data-i18n="skip">Skip to your picks</a>
 
 <!-- Header: fixed, never moves -->
 <header class="hdr">
   <div class="wrap hdr-in">
     <a class="logo" href="/"><img src="logo.png" alt="BetGRW" width="140" height="34"></a>
-    <nav class="hnav" aria-label="Sections">
-      <a href="#georges" class="on">Georges</a>
-      <a href="#picks">Picks</a>
-      <a href="#board">Leaderboard</a>
-      <a href="#nhl">Standings</a>
-      <a href="#rules">Rules</a>
-      <a href="/results">Season</a>
+    <nav class="hnav" aria-label="Sections" data-i18n-aria="nav.aria">
+      <a href="#georges" class="on" data-i18n="nav.georges">Georges</a>
+      <a href="#picks" data-i18n="nav.picks">Picks</a>
+      <a href="#board" data-i18n="nav.board">Leaderboard</a>
+      <a href="#nhl" data-i18n="nav.standings">Standings</a>
+      <a href="#rules" data-i18n="nav.rules">Rules</a>
+      <a href="/results" data-i18n="nav.season">Season</a>
     </nav>
     <div class="hdr-right">
       <span class="hdr-pill" id="hdr-pill" hidden></span>
-      <a class="hdr-me" id="hdr-me" href="#picks">Make your picks</a>
-      <a class="hdr-cta" href="https://betgrw.com" target="_blank" rel="noopener">Deposit</a>
+      <a class="lang-sw" id="lang-switch" href="?lang=fr" lang="fr">FR</a>
+      <a class="hdr-me" id="hdr-me" href="#picks" data-i18n="hdr.make">Make your picks</a>
+      <a class="hdr-cta" href="https://betgrw.com" target="_blank" rel="noopener" data-i18n="hdr.deposit">Deposit</a>
     </div>
   </div>
 </header>
@@ -41,7 +42,7 @@
 <!-- Match strip -->
 <div class="strip-bar">
   <div class="wrap strip-in">
-    <ol class="strip" id="strip" aria-label="Saturday’s games"></ol>
+    <ol class="strip" id="strip" aria-label="Saturday’s games" data-i18n-aria="strip.aria"></ol>
   </div>
 </div>
 
@@ -51,36 +52,36 @@
     <div class="hub-id">
       <img class="hub-badge" src="apple-touch-icon.png" alt="" width="56" height="56">
       <div>
-        <h1 id="hub-h">Beat Georges</h1>
-        <p class="hub-meta">Saturday NHL Pick’em</p>
+        <h1 id="hub-h" data-i18n="hub.title">Beat Georges</h1>
+        <p class="hub-meta" data-i18n="hub.sub">Saturday NHL Pick’em</p>
       </div>
     </div>
     <dl class="hub-facts">
-      <div><dt>Date</dt><dd id="date-label">Saturday</dd></div>
-      <div><dt>Games</dt><dd id="f-games">–</dd></div>
+      <div><dt data-i18n="hub.date">Date</dt><dd id="date-label">Saturday</dd></div>
+      <div><dt data-i18n="hub.games">Games</dt><dd id="f-games">–</dd></div>
       <div><dt id="lock-label">Picks lock</dt><dd id="lockline">–</dd></div>
     </dl>
     <div class="hub-duel" aria-live="polite">
       <div class="hd-side"><img class="gphoto sm" src="georges.jpg?v=__V__" alt="" width="30" height="30"><span class="hd-name">Georges</span><span class="hd-num" id="sb-georges">0</span></div>
       <span class="hd-sep">:</span>
-      <div class="hd-side you"><span class="hd-num" id="sb-you">–</span><span class="hd-name" id="sb-you-label">You</span></div>
+      <div class="hd-side you"><span class="hd-num" id="sb-you">–</span><span class="hd-name" id="sb-you-label" data-i18n="duel.you">You</span></div>
     </div>
   </div>
-  <div class="wrap"><p class="hub-status" id="sb-strip">Loading Saturday’s games</p></div>
+  <div class="wrap"><p class="hub-status" id="sb-strip" data-i18n="hub.loading">Loading Saturday’s games</p></div>
 </section>
 
 <!-- Prize pool (amounts come from the server's PRIZES list) -->
 <div class="wrap">
-  <section class="prize" aria-label="Prizes">
+  <section class="prize" aria-label="Prizes" data-i18n-aria="prize.aria">
     <div class="prize-top">
       <div class="prize-amount">
         <span class="prize-num" id="pool">$500</span>
-        <span class="prize-sub">every Saturday</span>
+        <span class="prize-sub" data-i18n="prize.weeklySub">every Saturday</span>
       </div>
       <h2 class="prize-head" id="prize-h">The top 10 split $500 every Saturday</h2>
-      <a class="prize-cta" href="https://betgrw.com" target="_blank" rel="noopener">Deposit at betgrw.com</a>
+      <a class="prize-cta" href="https://betgrw.com" target="_blank" rel="noopener" data-i18n="prize.cta">Deposit at betgrw.com</a>
     </div>
-    <ol class="payouts" id="payouts" aria-label="Weekly prize for each place">
+    <ol class="payouts" id="payouts" aria-label="Weekly prize for each place" data-i18n-aria="prize.weeklyAria">
       <li><span>1st</span><b>$150</b></li><li><span>2nd</span><b>$100</b></li><li><span>3rd</span><b>$70</b></li><li><span>4th</span><b>$50</b></li><li><span>5th</span><b>$40</b></li>
       <li><span>6th</span><b>$30</b></li><li><span>7th</span><b>$22</b></li><li><span>8th</span><b>$16</b></li><li><span>9th</span><b>$12</b></li><li><span>10th</span><b>$10</b></li>
     </ol>
@@ -88,12 +89,12 @@
       <div class="prize-top">
         <div class="prize-amount">
           <span class="prize-num" id="s-pool">$5,000</span>
-          <span class="prize-sub">season pool</span>
+          <span class="prize-sub" data-i18n="prize.seasonSub">season pool</span>
         </div>
         <h2 class="prize-head" id="s-head">The top 20 of the season split $5,000</h2>
-        <a class="prize-cta ghost" href="/results#season">Season standings</a>
+        <a class="prize-cta ghost" href="/results#season" data-i18n="prize.seasonCta">Season standings</a>
       </div>
-      <ol class="payouts" id="s-payouts" aria-label="Season prize for each place">
+      <ol class="payouts" id="s-payouts" aria-label="Season prize for each place" data-i18n-aria="prize.seasonAria">
         <li><span>1st</span><b>$1,500</b></li><li><span>2nd</span><b>$900</b></li><li><span>3rd</span><b>$600</b></li><li><span>4th</span><b>$400</b></li><li><span>5th</span><b>$300</b></li>
         <li><span>6th</span><b>$250</b></li><li><span>7th</span><b>$200</b></li><li><span>8th–10th</span><b>$125</b></li><li><span>11th–15th</span><b>$55</b></li><li><span>16th–20th</span><b>$40</b></li>
       </ol>
@@ -101,7 +102,7 @@
     </div>
     <p class="prize-rule">
       <svg class="prize-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="4.6" r="1" fill="currentColor"/></svg>
-      <span>To be eligible, you need to deposit at least <b>$20</b> on betgrw.com in the <b>last 30 days</b>.</span>
+      <span data-i18n-html="prize.rule">To be eligible, you need to deposit at least <b>$20</b> on betgrw.com in the <b>last 30 days</b>.</span>
     </p>
   </section>
 </div>
@@ -115,14 +116,14 @@
         <img class="gphoto" src="georges.jpg?v=__V__" alt="Georges Laraque" width="64" height="64">
         <div class="expert-id">
           <h2 id="georges-h">Georges Laraque</h2>
-          <p>BetGRW ambassador and former NHL enforcer. His winner in every Saturday game.</p>
+          <p data-i18n="expert.bio">BetGRW ambassador and former NHL enforcer. His winner in every Saturday game.</p>
         </div>
       </div>
       <blockquote class="expert-take" id="x-intro" hidden></blockquote>
       <dl class="expert-stats">
-        <div><dt>Record</dt><dd id="x-record">0–0</dd></div>
-        <div><dt>Hit rate</dt><dd id="x-rate">–</dd></div>
-        <div><dt>Same as you</dt><dd id="x-agree">–</dd></div>
+        <div><dt data-i18n="expert.record">Record</dt><dd id="x-record">0–0</dd></div>
+        <div><dt data-i18n="expert.rate">Hit rate</dt><dd id="x-rate">–</dd></div>
+        <div><dt data-i18n="expert.same">Same as you</dt><dd id="x-agree">–</dd></div>
       </dl>
       <ol class="xlist" id="tickets"></ol>
     </section>
@@ -130,33 +131,33 @@
     <!-- Your picks, match-list style -->
     <section class="block picks" id="picks" aria-labelledby="picks-h">
       <header class="block-head">
-        <h2 id="picks-h">Your picks</h2>
+        <h2 id="picks-h" data-i18n="picks.title">Your picks</h2>
         <span class="block-aside" id="progress-text">0 of 0 picked</span>
       </header>
       <p class="block-sub" id="lock-sub">Pick the winner of every Saturday game. Overtime and shootouts count.</p>
 
       <div class="entry-form">
         <div class="field">
-          <label for="username">BetGRW username</label>
-          <input id="username" name="username" type="text" maxlength="20" autocomplete="nickname" spellcheck="false" placeholder="e.g. HabsFan_514" aria-describedby="username-help">
-          <p id="username-help" class="help">Your betgrw.com username. It shows on the leaderboard.</p>
+          <label for="username" data-i18n="form.username">BetGRW username</label>
+          <input id="username" name="username" type="text" maxlength="20" autocomplete="nickname" spellcheck="false" placeholder="e.g. HabsFan_514" data-i18n-ph="form.usernamePh" aria-describedby="username-help">
+          <p id="username-help" class="help" data-i18n="form.usernameHelp">Your betgrw.com username. It shows on the leaderboard.</p>
         </div>
         <div class="field">
-          <label for="email">Email</label>
-          <input id="email" name="email" type="email" maxlength="254" autocomplete="email" spellcheck="false" placeholder="you@example.com" aria-describedby="email-help">
-          <p id="email-help" class="help">We use it to contact you if you win. It’s never shown on the site.</p>
+          <label for="email" data-i18n="form.email">Email</label>
+          <input id="email" name="email" type="email" maxlength="254" autocomplete="email" spellcheck="false" placeholder="you@example.com" data-i18n-ph="form.emailPh" aria-describedby="email-help">
+          <p id="email-help" class="help" data-i18n="form.emailHelp">We use it to contact you if you win. It’s never shown on the site.</p>
         </div>
         <label class="consent">
           <input id="optin" type="checkbox">
-          <span>Email me a reminder before each Saturday and news and offers from BetGRW. You can unsubscribe at any time.</span>
+          <span data-i18n="form.consent">Email me a reminder before each Saturday and news and offers from BetGRW. You can unsubscribe at any time.</span>
         </label>
-        <div class="trap" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+        <div class="trap" aria-hidden="true"><label for="website" data-i18n="form.trap">Leave this empty</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
       </div>
 
       <div class="day-head">
         <span id="day-label">Saturday</span>
-        <span class="dh-col">Your pick</span>
-        <span class="dh-gl">Georges</span>
+        <span class="dh-col" data-i18n="picks.headPick">Your pick</span>
+        <span class="dh-gl" data-i18n="picks.headGeorges">Georges</span>
       </div>
       <ol class="mlist" id="games"></ol>
 
@@ -171,8 +172,8 @@
     </section>
 
     <details class="block rules" id="rules">
-      <summary>How it works</summary>
-      <ul>
+      <summary data-i18n="rules.title">How it works</summary>
+      <ul data-i18n-list="rules.list">
         <li>The contest runs on Saturday NHL games only. Pick a winner in every game on Saturday’s slate. Overtime and shootout results count.</li>
         <li>Saturday’s games open for picks on Tuesday, so you can pick any time during the week.</li>
         <li>Picks lock for everyone at the first puck drop. Until then you can change them as often as you like from this device.</li>
@@ -197,15 +198,15 @@
   <aside class="side-col">
     <section class="block board" id="board" aria-labelledby="board-h">
       <header class="block-head">
-        <h2 id="board-h">Leaderboard</h2>
+        <h2 id="board-h" data-i18n="board.title">Leaderboard</h2>
         <span class="block-aside" id="board-sub"></span>
       </header>
-      <div class="seg board-seg" role="group" aria-label="Choose a leaderboard">
-        <button type="button" data-board="week" aria-pressed="true">This Saturday</button>
-        <button type="button" data-board="season" aria-pressed="false">Season</button>
+      <div class="seg board-seg" role="group" aria-label="Choose a leaderboard" data-i18n-aria="board.aria">
+        <button type="button" data-board="week" aria-pressed="true" data-i18n="board.week">This Saturday</button>
+        <button type="button" data-board="season" aria-pressed="false" data-i18n="board.season">Season</button>
       </div>
       <table>
-        <thead><tr><th scope="col">#</th><th scope="col">Player</th><th scope="col" class="num">Pts</th><th scope="col" class="num prize-col">Prize</th></tr></thead>
+        <thead><tr><th scope="col">#</th><th scope="col" data-i18n="th.player">Player</th><th scope="col" class="num" data-i18n="th.pts">Pts</th><th scope="col" class="num prize-col" data-i18n="th.prize">Prize</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
       <button class="more" id="more" type="button" hidden>Show all players</button>
@@ -214,32 +215,32 @@
 
     <section class="block nhl" id="nhl" aria-labelledby="nhl-h" hidden>
       <header class="block-head">
-        <h2 id="nhl-h">NHL standings</h2>
+        <h2 id="nhl-h" data-i18n="nhl.title">NHL standings</h2>
         <span class="block-aside" id="nhl-sub"></span>
       </header>
-      <div class="seg" role="group" aria-label="Choose a standings view">
-        <button type="button" data-view="Atlantic">Atlantic</button>
-        <button type="button" data-view="Metropolitan">Metro</button>
-        <button type="button" data-view="Central">Central</button>
-        <button type="button" data-view="Pacific">Pacific</button>
-        <button type="button" data-view="League">League</button>
+      <div class="seg" role="group" aria-label="Choose a standings view" data-i18n-aria="nhl.aria">
+        <button type="button" data-view="Atlantic" data-i18n="nhl.Atlantic">Atlantic</button>
+        <button type="button" data-view="Metropolitan" data-i18n="nhl.Metropolitan">Metro</button>
+        <button type="button" data-view="Central" data-i18n="nhl.Central">Central</button>
+        <button type="button" data-view="Pacific" data-i18n="nhl.Pacific">Pacific</button>
+        <button type="button" data-view="League" data-i18n="nhl.League">League</button>
       </div>
       <table>
-        <thead><tr><th scope="col">#</th><th scope="col">Team</th><th scope="col" class="num" title="Games played">GP</th><th scope="col" class="num" title="Wins">W</th><th scope="col" class="num" title="Losses">L</th><th scope="col" class="num" title="Overtime losses">OT</th><th scope="col" class="num" title="Points">PTS</th></tr></thead>
+        <thead><tr><th scope="col">#</th><th scope="col" data-i18n="nhl.team">Team</th><th scope="col" class="num" title="Games played" data-i18n="nhl.gp" data-i18n-title="nhl.gpT">GP</th><th scope="col" class="num" title="Wins" data-i18n="nhl.w" data-i18n-title="nhl.wT">W</th><th scope="col" class="num" title="Losses" data-i18n="nhl.l" data-i18n-title="nhl.lT">L</th><th scope="col" class="num" title="Overtime losses" data-i18n="nhl.ot" data-i18n-title="nhl.otT">OT</th><th scope="col" class="num" title="Points" data-i18n="nhl.pts" data-i18n-title="nhl.ptsT">PTS</th></tr></thead>
         <tbody id="nhl-rows"></tbody>
       </table>
       <p class="nhl-note" id="nhl-note"></p>
     </section>
 
-    <section class="block facts" aria-label="This Saturday in numbers">
-      <div class="fact"><span id="f-players">0</span><small>players in</small></div>
-      <div class="fact"><span id="f-final">0/0</span><small>games final</small></div>
-      <div class="fact"><span id="f-beat">0</span><small>ahead of Georges</small></div>
+    <section class="block facts" aria-label="This Saturday in numbers" data-i18n-aria="facts.aria">
+      <div class="fact"><span id="f-players">0</span><small data-i18n="facts.players">players in</small></div>
+      <div class="fact"><span id="f-final">0/0</span><small data-i18n="facts.final">games final</small></div>
+      <div class="fact"><span id="f-beat">0</span><small data-i18n="facts.ahead">ahead of Georges</small></div>
     </section>
 
     <section class="block feed" aria-labelledby="feed-h">
       <header class="block-head">
-        <h2 id="feed-h">Latest entries</h2>
+        <h2 id="feed-h" data-i18n="feed.title">Latest entries</h2>
       </header>
       <ol class="feed-list" id="feed"></ol>
     </section>
@@ -249,11 +250,12 @@
 <footer class="foot">
   <div class="wrap foot-in">
     <img src="logo.png" alt="BetGRW" width="99" height="24">
-    <p>18+. Play responsibly. Game results from the NHL. BetGRW is not affiliated with the NHL or its teams.</p>
+    <p data-i18n="foot">18+. Play responsibly. Game results from the NHL. BetGRW is not affiliated with the NHL or its teams.</p>
   </div>
 </footer>
 
 <script src="teams.js?v=__V__"></script>
+<script src="i18n.js?v=__V__"></script>
 <script src="app.js?v=__V__"></script>
 </body>
 </html>

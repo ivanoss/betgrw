@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Season and results | Beat Georges</title>
+<title data-i18n="res.docTitle">Season and results | Beat Georges</title>
 <meta name="description" content="Every finished Saturday of the Beat Georges NHL Pick’em: winners, final standings and Georges Laraque’s record.">
 <meta name="theme-color" content="#0A1128">
 <link rel="icon" href="favicon.png" type="image/png">
@@ -15,19 +15,20 @@
 <link rel="stylesheet" href="styles.css?v=__V__">
 </head>
 <body>
-<a class="skip" href="#results">Skip to results</a>
+<a class="skip" href="#results" data-i18n="res.skip">Skip to results</a>
 
 <header class="hdr">
   <div class="wrap hdr-in">
     <a class="logo" href="/"><img src="logo.png" alt="BetGRW" width="140" height="34"></a>
-    <nav class="hnav" aria-label="Sections">
-      <a href="/">This Saturday</a>
-      <a href="/results" class="on" aria-current="page">Season</a>
-      <a href="/#rules">Rules</a>
+    <nav class="hnav" aria-label="Sections" data-i18n-aria="nav.aria">
+      <a href="/" data-i18n="nav.thisSat">This Saturday</a>
+      <a href="/results" class="on" aria-current="page" data-i18n="nav.season">Season</a>
+      <a href="/#rules" data-i18n="nav.rules">Rules</a>
     </nav>
     <div class="hdr-right">
-      <a class="hdr-me cta" href="/#picks">Make your picks</a>
-      <a class="hdr-cta" href="https://betgrw.com" target="_blank" rel="noopener">Deposit</a>
+      <a class="lang-sw" id="lang-switch" href="?lang=fr" lang="fr">FR</a>
+      <a class="hdr-me cta" href="/#picks" data-i18n="hdr.make">Make your picks</a>
+      <a class="hdr-cta" href="https://betgrw.com" target="_blank" rel="noopener" data-i18n="hdr.deposit">Deposit</a>
     </div>
   </div>
 </header>
@@ -37,8 +38,8 @@
     <div class="hub-id">
       <img class="hub-badge" src="apple-touch-icon.png" alt="" width="56" height="56">
       <div>
-        <h1 id="res-title">Season and results</h1>
-        <p class="hub-meta" id="res-sub">The season table and every finished Saturday</p>
+        <h1 id="res-title" data-i18n="res.title">Season and results</h1>
+        <p class="hub-meta" id="res-sub" data-i18n="res.sub">The season table and every finished Saturday</p>
       </div>
     </div>
     <dl class="hub-facts" id="res-facts" hidden></dl>
@@ -46,7 +47,7 @@
 </section>
 
 <main class="wrap page single" id="results">
-  <p class="res-back" id="res-back" hidden><a href="/results">All Saturdays</a></p>
+  <p class="res-back" id="res-back" hidden><a href="/results" data-i18n="res.back">All Saturdays</a></p>
 
   <!-- Season standings -->
   <section class="block" id="season" aria-labelledby="season-h" hidden>
@@ -56,7 +57,7 @@
     </header>
     <div class="rtable-wrap">
       <table class="rtable stable">
-        <thead><tr><th scope="col">#</th><th scope="col">Player</th><th scope="col" class="num">Pts</th><th scope="col" class="num">Weeks</th><th scope="col" class="num">Weekly wins</th><th scope="col" class="num">Best week</th><th scope="col" class="num">Prize</th></tr></thead>
+        <thead><tr><th scope="col">#</th><th scope="col" data-i18n="th.player">Player</th><th scope="col" class="num" data-i18n="th.pts">Pts</th><th scope="col" class="num" data-i18n="res.thWeeks">Weeks</th><th scope="col" class="num" data-i18n="res.thWins">Weekly wins</th><th scope="col" class="num" data-i18n="res.thBest">Best week</th><th scope="col" class="num" data-i18n="th.prize">Prize</th></tr></thead>
         <tbody id="season-rows"></tbody>
       </table>
     </div>
@@ -67,12 +68,12 @@
   <!-- List of Saturdays -->
   <section class="block" id="list" aria-labelledby="list-h" hidden>
     <header class="block-head">
-      <h2 id="list-h">Saturdays</h2>
+      <h2 id="list-h" data-i18n="res.sats">Saturdays</h2>
       <span class="block-aside" id="list-count"></span>
     </header>
     <div class="rtable-wrap">
       <table class="rtable">
-        <thead><tr><th scope="col">Saturday</th><th scope="col">Winner</th><th scope="col" class="num">Top score</th><th scope="col" class="num">Georges</th><th scope="col" class="num">Beat Georges</th><th scope="col" class="num">Players</th></tr></thead>
+        <thead><tr><th scope="col" data-i18n="res.thSat">Saturday</th><th scope="col" data-i18n="res.thWinner">Winner</th><th scope="col" class="num" data-i18n="res.thTop">Top score</th><th scope="col" class="num">Georges</th><th scope="col" class="num" data-i18n="res.thBeat">Beat Georges</th><th scope="col" class="num" data-i18n="res.thPlayers">Players</th></tr></thead>
         <tbody id="list-rows"></tbody>
       </table>
     </div>
@@ -82,20 +83,20 @@
   <div class="res-detail" id="detail" hidden>
     <section class="block board with-prize" aria-labelledby="final-h">
       <header class="block-head">
-        <h2 id="final-h">Final standings</h2>
+        <h2 id="final-h" data-i18n="res.finalStandings">Final standings</h2>
         <span class="block-aside" id="final-sub"></span>
       </header>
       <table>
-        <thead><tr><th scope="col">#</th><th scope="col">Player</th><th scope="col" class="num">Pts</th><th scope="col" class="num prize-col">Prize</th></tr></thead>
+        <thead><tr><th scope="col">#</th><th scope="col" data-i18n="th.player">Player</th><th scope="col" class="num" data-i18n="th.pts">Pts</th><th scope="col" class="num prize-col" data-i18n="th.prize">Prize</th></tr></thead>
         <tbody id="final-rows"></tbody>
       </table>
       <button class="more" id="final-more" type="button" hidden>Show everyone</button>
-      <p class="board-note">Prizes go to eligible players only. Ties share the prizes for the places they cover.</p>
+      <p class="board-note" data-i18n="res.prizeNote">Prizes go to eligible players only. Ties share the prizes for the places they cover.</p>
     </section>
 
     <section class="block" aria-labelledby="games-h">
       <header class="block-head">
-        <h2 id="games-h">Game results</h2>
+        <h2 id="games-h" data-i18n="res.games">Game results</h2>
         <span class="block-aside" id="games-sub"></span>
       </header>
       <ol class="glist" id="game-rows"></ol>
@@ -108,11 +109,12 @@
 <footer class="foot">
   <div class="wrap foot-in">
     <img src="logo.png" alt="BetGRW" width="99" height="24">
-    <p>18+. Play responsibly. Game results from the NHL. BetGRW is not affiliated with the NHL or its teams.</p>
+    <p data-i18n="foot">18+. Play responsibly. Game results from the NHL. BetGRW is not affiliated with the NHL or its teams.</p>
   </div>
 </footer>
 
 <script src="teams.js?v=__V__"></script>
+<script src="i18n.js?v=__V__"></script>
 <script src="results.js?v=__V__"></script>
 </body>
 </html>
