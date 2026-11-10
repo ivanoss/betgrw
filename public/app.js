@@ -86,6 +86,7 @@
     renderGames();
     renderBoard();
     renderFeed();
+    renderStandings();
   }
 
   function renderStrip() {
@@ -295,6 +296,52 @@
       : '<li class="empty">No entries yet this Saturday.</li>';
   }
 
+
+  /* ---------- NHL standings ---------- */
+  let standings = null;
+  let nhlView = store.get('bg_nhl_view') || 'Atlantic';
+  async function loadStandings() {
+    try {
+      const res = await fetch('/api/standings', { cache: 'no-store' });
+      const json = await res.json();
+      if (!res.ok || !Array.isArray(json.teams) || !json.teams.length) throw new Error('no standings');
+      standings = json.teams;
+      $('#nhl').hidden = false;
+      renderStandings();
+    } catch {
+      if (!standings) $('#nhl').hidden = true;
+    }
+  }
+  function renderStandings() {
+    if (!standings) return;
+    const views = ['Atlantic', 'Metropolitan', 'Central', 'Pacific', 'League'];
+    if (!views.includes(nhlView)) nhlView = 'Atlantic';
+    document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === nhlView)));
+    const sorted = [...standings].sort((a, b) => b.pts - a.pts || a.gp - b.gp || b.w - a.w);
+    const list = nhlView === 'League' ? sorted : sorted.filter(t => t.div === nhlView);
+    const playing = new Set();
+    if (data) data.games.forEach(g => { playing.add(g.away.abbr); playing.add(g.home.abbr); });
+    $('#nhl-rows').innerHTML = list.map((t, i) => {
+      const ti = info({ abbr: t.abbr, name: t.name });
+      const cls = [nhlView !== 'League' && i === 2 && list.length > 3 ? 'cut' : '', playing.has(t.abbr) ? 'sat' : ''].join(' ');
+      return `<tr class="${cls}"><td>${i + 1}</td>
+        <td><span class="nt">${dot({ abbr: t.abbr })}<b>${esc(t.abbr)}</b><span>${esc(ti.name)}</span></span></td>
+        <td class="num">${t.gp}</td><td class="num">${t.w}</td><td class="num">${t.l}</td><td class="num">${t.otl}</td><td class="num p">${t.pts}</td></tr>`;
+    }).join('');
+    $('#nhl-sub').textContent = nhlView === 'League' ? 'All 32 teams' : nhlView + ' Division';
+    const notes = [];
+    if (playing.size) notes.push('<span><i></i>Plays this Saturday</span>');
+    if (nhlView !== 'League') notes.push('<span>Line: top 3 in the division make the playoffs, plus 2 wild cards per conference.</span>');
+    $('#nhl-note').innerHTML = notes.join(' ');
+  }
+  document.querySelector('.seg').addEventListener('click', e => {
+    const b = e.target.closest('button[data-view]');
+    if (!b) return;
+    nhlView = b.dataset.view;
+    store.set('bg_nhl_view', nhlView);
+    renderStandings();
+  });
+
   /* ---------- Actions ---------- */
   $('#games').addEventListener('click', e => {
     const b = e.target.closest('button.odd');
@@ -357,4 +404,6 @@
     else { renderDuel(); updateEntry(); renderFeed(); }
   }, 30000);
   load();
+  loadStandings();
+  setInterval(loadStandings, 30 * 60000);
 })();

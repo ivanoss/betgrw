@@ -155,6 +155,25 @@
       <button class="more" id="more" type="button" hidden>Show all players</button>
     </section>
 
+    <section class="block nhl" id="nhl" aria-labelledby="nhl-h" hidden>
+      <header class="block-head">
+        <h2 id="nhl-h">NHL standings</h2>
+        <span class="block-aside" id="nhl-sub"></span>
+      </header>
+      <div class="seg" role="group" aria-label="Choose a standings view">
+        <button type="button" data-view="Atlantic">Atlantic</button>
+        <button type="button" data-view="Metropolitan">Metro</button>
+        <button type="button" data-view="Central">Central</button>
+        <button type="button" data-view="Pacific">Pacific</button>
+        <button type="button" data-view="League">League</button>
+      </div>
+      <table>
+        <thead><tr><th scope="col">#</th><th scope="col">Team</th><th scope="col" class="num" title="Games played">GP</th><th scope="col" class="num" title="Wins">W</th><th scope="col" class="num" title="Losses">L</th><th scope="col" class="num" title="Overtime losses">OT</th><th scope="col" class="num" title="Points">PTS</th></tr></thead>
+        <tbody id="nhl-rows"></tbody>
+      </table>
+      <p class="nhl-note" id="nhl-note"></p>
+    </section>
+
     <section class="block facts" aria-label="This Saturday in numbers">
       <div class="fact"><span id="f-players">0</span><small>players in</small></div>
       <div class="fact"><span id="f-final">0/0</span><small>games final</small></div>

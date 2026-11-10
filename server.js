@@ -15,6 +15,7 @@ const MOCK_FILE = process.env.MOCK_FILE ? path.resolve(process.env.MOCK_FILE) : 
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const NHL_SCORE_URL = date => `https://api-web.nhle.com/v1/score/${date}`;
 const NHL_SCHEDULE_URL = date => `https://api-web.nhle.com/v1/schedule/${date}`;
+const NHL_STANDINGS_URL = 'https://api-web.nhle.com/v1/standings/now';
 const RESERVED = ['georges', 'laraque', 'georgeslaraque', 'admin', 'betgrw', 'moderator'];
 
 /* ---------- Dates ----------
@@ -152,6 +153,51 @@ async function getGames(date) {
   } catch (err) {
     console.error('Score fetch failed:', err.message);
     if (hit) return hit.games; // serve last good data
+    throw err;
+  }
+}
+
+/* ---------- NHL standings (sidebar) ---------- */
+let standingsCache = null; // { at, teams }
+function mockStandings() {
+  // Sample standings for the preview (npm run demo); not real data.
+  const divs = {
+    Atlantic: ['FLA', 'TOR', 'TBL', 'BOS', 'MTL', 'OTT', 'DET', 'BUF'],
+    Metropolitan: ['WSH', 'CAR', 'NJD', 'NYR', 'PIT', 'PHI', 'CBJ', 'NYI'],
+    Central: ['WPG', 'DAL', 'COL', 'MIN', 'STL', 'UTA', 'NSH', 'CHI'],
+    Pacific: ['VGK', 'EDM', 'LAK', 'VAN', 'CGY', 'SEA', 'ANA', 'SJS']
+  };
+  const teams = [];
+  for (const [div, list] of Object.entries(divs)) {
+    list.forEach((abbr, i) => {
+      const gp = 16 + (i % 3), w = 12 - i, otl = i % 3, l = gp - w - otl;
+      teams.push({ abbr, name: abbr, conf: div === 'Atlantic' || div === 'Metropolitan' ? 'Eastern' : 'Western', div, gp, w, l, otl, pts: w * 2 + otl });
+    });
+  }
+  return teams;
+}
+async function getStandings() {
+  if (standingsCache && Date.now() - standingsCache.at < 30 * 60e3) return standingsCache.teams;
+  try {
+    let teams;
+    if (MOCK_FILE) teams = mockStandings();
+    else {
+      const res = await fetch(NHL_STANDINGS_URL, { headers: { 'User-Agent': 'BeatGeorgesPickem/1.0' }, signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error('NHL API ' + res.status);
+      const raw = await res.json();
+      teams = (raw.standings || []).map(t => ({
+        abbr: t.teamAbbrev?.default || '',
+        name: t.teamCommonName?.default || t.teamName?.default || '',
+        conf: t.conferenceName || '',
+        div: t.divisionName || '',
+        gp: t.gamesPlayed ?? 0, w: t.wins ?? 0, l: t.losses ?? 0, otl: t.otLosses ?? 0, pts: t.points ?? 0
+      })).filter(t => t.abbr);
+    }
+    standingsCache = { at: Date.now(), teams };
+    return teams;
+  } catch (err) {
+    console.error('Standings fetch failed:', err.message);
+    if (standingsCache) return standingsCache.teams;
     throw err;
   }
 }
@@ -353,6 +399,7 @@ const server = http.createServer(async (req, res) => {
   try {
     if (url.pathname === '/api/state' && req.method === 'GET') return await handleState(req, res);
     if (url.pathname === '/api/entry' && req.method === 'POST') return await handleEntry(req, res, ip);
+    if (url.pathname === '/api/standings' && req.method === 'GET') return send(res, 200, { teams: await getStandings() });
     if (url.pathname.startsWith('/api/admin/')) return await handleAdmin(req, res, url.pathname.slice(11));
     if (url.pathname.startsWith('/api/')) return send(res, 404, { error: 'Not found' });
     if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'Method not allowed');
