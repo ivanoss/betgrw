@@ -75,3 +75,11 @@ Any Node host works. Settings:
 - Every finished Saturday with its winners, top score, Georges' score and number of players.
 - Click a Saturday for the final standings with prizes, and every game's winner next to Georges' pick.
 - Once all of a Saturday's games are final, its results are saved permanently, so they never change, even if the NHL feed does.
+
+## Prizes and season
+- **Weekly:** `PRIZES` near the top of `server.js` ($500, top 10). Paid every Saturday.
+- **Season:** `SEASON` right below it ($5,000, top 20), with the first and last Saturday that count. Season points are correct picks added up over every Saturday in that range; a missed Saturday counts as 0.
+- The banner, leaderboard and rules all follow these tables. One line in the rules section of `public/index.html` also lists the amounts, so update that too.
+- Optional Render settings `SEASON_START` and `SEASON_END` (like `2026-11-14`) change the season dates without editing code.
+- **Usernames hold for the whole season:** each name belongs to the device that first used it. If a player gets a new phone, release their name in `/admin` under **Release a username**.
+- `/admin` has **Download season table (CSV)** for paying season prizes.

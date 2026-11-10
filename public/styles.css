@@ -157,6 +157,16 @@ h1 { font: 900 28px/1.1 var(--text); letter-spacing: -.5px; white-space: nowrap;
   border-radius: 4px; padding: 12px 18px; white-space: nowrap; box-shadow: 0 2px 0 rgba(0,0,0,.15);
 }
 .prize-cta:hover { background: var(--accent-soft); }
+.prize-amount { min-width: 236px; }
+.prize-season { display: grid; gap: 14px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.18); }
+.prize-season .prize-num { color: #FFE08A; }
+.prize-season .payouts li { background: rgba(4, 18, 60, .28); border-color: rgba(255, 224, 138, .28); }
+.prize-season .payouts span { color: #E9DDB2; }
+.prize-cta.ghost { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.55); box-shadow: none; }
+.prize-cta.ghost:hover { background: rgba(255,255,255,.12); }
+.season-note { margin: 0; font-size: 13px; color: #DCE6FF; }
+.board-seg { padding-top: 0; }
+.board .wk { color: var(--ink-2); font-size: 12px; white-space: nowrap; }
 
 /* ---------- Page grid ---------- */
 .page { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; padding-top: 14px; padding-bottom: 40px; }
@@ -368,6 +378,15 @@ tr.gap td { padding: 0 var(--pad); color: var(--ink-3); line-height: 1.2; }
 .gl-pick.miss { background: var(--bg); color: var(--ink-3); text-decoration: line-through; }
 .gl-none { color: var(--ink-3); }
 
+.stable tbody tr { cursor: default; }
+.stable td.rk { color: var(--ink-2); width: 44px; }
+.stable tr.lead td.rk { color: var(--accent); font-weight: 700; }
+.stable td.sprize { font: 700 14px/1 var(--num); color: var(--green); white-space: nowrap; }
+.stable tr.is-g td { background: var(--nav); color: #fff; }
+.stable tr.is-g td.rnum { color: var(--accent-hi); }
+.stable .gname { display: inline-flex; align-items: center; gap: 8px; }
+.res-hub .hub-facts { grid-template-columns: repeat(4, minmax(0, auto)); }
+
 /* ---------- Footer ---------- */
 .foot { background: var(--nav); color: #95A3C6; font-size: 12px; }
 .foot-in { padding-top: 18px; padding-bottom: calc(18px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
@@ -403,6 +422,10 @@ tr.gap td { padding: 0 var(--pad); color: var(--ink-3); line-height: 1.2; }
   .prize-top { display: contents; }
   .prize-amount { order: 1; }
   .prize-head { order: 2; margin-top: -6px; }
+  .prize-season { display: flex; flex-direction: column; }
+  .prize-season .prize-top { display: contents; }
+  .prize-amount { min-width: 0; }
+  .season-note { order: 4; }
   .payouts { order: 3; }
   .prize-rule { order: 4; }
   .prize-amount { padding: 0; border: 0; }

@@ -28,6 +28,50 @@
 
   const status = (msg, kind) => { const s = $('#res-status'); s.textContent = msg; s.className = 'status' + (kind ? ' ' + kind : ''); };
 
+  /* ---------- Season standings ---------- */
+  let seasonRows = [], seasonAll = false, seasonData = null;
+  function renderSeason() {
+    const TOP = 50;
+    const list = seasonAll ? seasonRows : seasonRows.slice(0, TOP);
+    const georges = seasonData.georges != null
+      ? `<tr class="is-g"><td>–</td><td class="rwin"><span class="gname"><img class="gphoto xs" src="georges.jpg" alt="" width="22" height="22">Georges Laraque</span></td><td class="num rnum">${seasonData.georges}</td><td class="num">${seasonData.weeksDone}</td><td class="num">–</td><td class="num">–</td><td class="num"></td></tr>` : '';
+    const at = list.findIndex(r => r.score <= seasonData.georges);
+    const body = list.map(r => `<tr class="${r.rank === 1 ? 'lead' : ''}">
+      <td class="rk">${r.rank}</td><td class="rwin">${esc(r.name)}</td><td class="num rnum">${r.score}</td>
+      <td class="num">${r.weeks}</td><td class="num">${r.wins || 0}</td><td class="num">${r.best}</td>
+      <td class="num sprize">${r.prize ? money(r.prize) : ''}</td></tr>`);
+    if (georges) body.splice(at === -1 ? body.length : at, 0, georges);
+    $('#season-rows').innerHTML = body.join('') || '<tr><td colspan="7" class="muted">The season table starts once the first Saturday game ends.</td></tr>';
+    const more = $('#season-more');
+    more.hidden = seasonRows.length <= TOP;
+    more.textContent = seasonAll ? 'Show top 50' : `Show all ${seasonRows.length} players`;
+  }
+  $('#season-more').addEventListener('click', () => { seasonAll = !seasonAll; renderSeason(); });
+  async function showSeason() {
+    try {
+      const res = await fetch('/api/season', { cache: 'no-store' });
+      const d = await res.json();
+      if (!res.ok) throw new Error();
+      seasonData = d; seasonRows = d.rows || [];
+      $('#season').hidden = false;
+      $('#season-h').textContent = `${d.name.charAt(0).toUpperCase() + d.name.slice(1)} standings`;
+      $('#season-sub').textContent = `Week ${d.weeksDone} of ${d.weeks}`;
+      $('#season-note').textContent = d.finished
+        ? 'Final season standings. Winners must be eligible. Ties share the prizes for the places they cover.'
+        : `Prizes as things stand now. The ${money(d.pool)} season pool is paid to the top ${d.prizes.length} after the last Saturday (${new Intl.DateTimeFormat(LOCALE, { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(day(d.end))}).`;
+      const facts = $('#res-facts');
+      facts.hidden = false;
+      const leaders = seasonRows.filter(r => r.rank === 1).map(r => r.name);
+      facts.innerHTML = `
+        <div><dt>Season</dt><dd>${esc(shortFmt.format(day(d.start)).replace(/, \d{4}$/, ''))} to ${esc(shortFmt.format(day(d.end)).replace(/, \d{4}$/, ''))}</dd></div>
+        <div><dt>Saturdays played</dt><dd>${d.weeksDone} of ${d.weeks}</dd></div>
+        <div><dt>Season pool</dt><dd>${money(d.pool)}</dd></div>
+        <div><dt>Leader</dt><dd>${leaders.length ? esc(names(leaders)) : '–'}</dd></div>`;
+      renderSeason();
+      if (location.hash === '#season') $('#season').scrollIntoView();
+    } catch { /* season table is optional on this page */ }
+  }
+
   /* ---------- All Saturdays ---------- */
   async function showList() {
     $('#list').hidden = false;
@@ -119,5 +163,5 @@
   }
 
   const date = new URLSearchParams(location.search).get('date');
-  if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) showDay(date); else showList();
+  if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) showDay(date); else { showSeason(); showList(); }
 })();

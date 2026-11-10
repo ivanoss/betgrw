@@ -179,13 +179,32 @@
   /* ---------- Prize pool ---------- */
   const money = n => '$' + (Number.isInteger(n) ? n.toLocaleString(LOCALE) : n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
   const ordinalPlace = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
+  function tiles(prizes) {
+    const out = [];
+    for (let i = 0; i < prizes.length;) {
+      let j = i;
+      while (j + 1 < prizes.length && prizes[j + 1] === prizes[i]) j++;
+      const label = i === j ? ordinalPlace(i + 1) : `${ordinalPlace(i + 1)}–${ordinalPlace(j + 1)}`;
+      out.push(`<li><span>${label}</span><b>${money(prizes[i])}</b></li>`);
+      i = j + 1;
+    }
+    return out.join('');
+  }
+  const shortDate = d => new Intl.DateTimeFormat(LOCALE, { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(d + 'T12:00:00Z'));
   function renderPrize() {
     const lb = data.leaderboard;
-    if (!lb.prizes || !lb.prizes.length) return;
-    $('#pool').textContent = money(lb.pool);
-    $('#pool-2').textContent = money(lb.pool);
-    $('#prize-h').firstChild.textContent = `The top ${lb.prizes.length} split `;
-    $('#payouts').innerHTML = lb.prizes.map((p, i) => `<li><span>${ordinalPlace(i + 1)}</span><b>${money(p)}</b></li>`).join('');
+    if (lb.prizes && lb.prizes.length) {
+      $('#pool').textContent = money(lb.pool);
+      $('#prize-h').textContent = `The top ${lb.prizes.length} split ${money(lb.pool)} every Saturday`;
+      $('#payouts').innerHTML = tiles(lb.prizes);
+    }
+    const se = data.season;
+    if (se && se.prizes) {
+      $('#s-pool').textContent = money(se.pool);
+      $('#s-head').textContent = `The top ${se.prizes.length} of the ${se.name} split ${money(se.pool)}`;
+      $('#s-payouts').innerHTML = tiles(se.prizes);
+      $('#s-note').textContent = `Season points are your correct picks added up over every Saturday from ${shortDate(se.start)} to ${shortDate(se.end)}. Miss a Saturday and it counts as 0.`;
+    }
   }
 
   /* ---------- Header: status pill and your entry ---------- */
@@ -317,15 +336,75 @@
     }
   }
 
+  /* ---------- Season leaderboard ---------- */
+  let boardView = store.get('bg_board_view') === 'season' ? 'season' : 'week';
+  let season = null;
+  async function loadSeason() {
+    try {
+      const res = await fetch('/api/season', { cache: 'no-store' });
+      if (!res.ok) throw new Error();
+      season = await res.json();
+      if (boardView === 'season' && data) renderBoard();
+    } catch { /* keep the last season table */ }
+  }
+  document.querySelector('.board-seg').addEventListener('click', e => {
+    const b = e.target.closest('button[data-board]');
+    if (!b) return;
+    boardView = b.dataset.board;
+    store.set('bg_board_view', boardView);
+    showAll = false;
+    if (boardView === 'season' && !season) loadSeason();
+    renderBoard();
+  });
+  function renderSeasonBoard() {
+    const tbl = $('#board');
+    tbl.classList.add('with-prize');
+    const myName = ((data.me && data.me.username) || store.get('bg_username') || '').toLowerCase();
+    if (!season) {
+      $('#board-sub').textContent = '';
+      $('#rows').innerHTML = '<tr><td colspan="4" class="board-empty">Loading the season.</td></tr>';
+      $('#board-note').textContent = '';
+      $('#more').hidden = true;
+      return;
+    }
+    $('#board-sub').textContent = `Week ${season.weeksDone} of ${season.weeks}`;
+    const rows = season.rows;
+    const TOP = 10;
+    const isMe = r => r.name.toLowerCase() === myName;
+    let shown = rows;
+    if (!showAll && rows.length > TOP + 1) {
+      shown = rows.filter((r, i) => i < TOP || isMe(r));
+    }
+    let html = '';
+    const gRow = `<tr class="is-georges"><td class="place">–</td><td class="player"><span class="gname"><img class="gphoto xs" src="${GEORGES_PHOTO}" alt="" width="22" height="22">Georges Laraque</span></td><td class="pts">${season.georges}</td><td class="num prize-col"></td></tr>`;
+    let gDone = season.georges == null;
+    shown.forEach((r, i) => {
+      if (!gDone && r.score <= season.georges) { html += gRow; gDone = true; } // Georges sits at his score, above players he ties
+      if (i > 0 && rows.indexOf(r) - rows.indexOf(shown[i - 1]) > 1) html += '<tr class="gap"><td colspan="4">…</td></tr>';
+      html += `<tr class="${isMe(r) ? 'is-me' : ''} ${r.rank === 1 ? 'top' : ''}">
+        <td class="place">${r.rank}</td>
+        <td class="player">${esc(r.name)}${isMe(r) ? '<span class="mark me">You</span>' : ''}<span class="wk"> · ${r.weeks} ${r.weeks === 1 ? 'week' : 'weeks'}</span></td>
+        <td class="pts">${r.score}</td>
+        <td class="num prize-col">${r.prize ? money(r.prize) : ''}</td></tr>`;
+    });
+    if (!gDone) html += gRow;
+    $('#rows').innerHTML = rows.length ? html : '<tr><td colspan="4" class="board-empty">The season table starts once the first game this Saturday ends.</td></tr>';
+    $('#board-note').textContent = season.finished
+      ? 'Final season standings. Ties share the prizes for the places they cover. Winners must be eligible.'
+      : `Season prizes as things stand now, paid after the last Saturday (${shortDate(season.end)}). Ties share the prizes for the places they cover.`;
+    const more = $('#more');
+    more.hidden = rows.length <= TOP + 1;
+    more.textContent = showAll ? 'Show top 10' : 'Show full season table';
+  }
+
   function renderBoard() {
+    document.querySelectorAll('.board-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.board === boardView)));
+    if (boardView === 'season') { renderFacts(); return renderSeasonBoard(); }
     const { rows, graded } = data.leaderboard;
     const g = georgesRow();
     const total = playable().length;
     const fans = rows.filter(r => !r.expert);
-    const beat = g && graded ? fans.filter(r => r.score > g.score).length : 0;
-    $('#f-players').textContent = data.entries;
-    $('#f-final').textContent = `${graded}/${total}`;
-    $('#f-beat').textContent = beat;
+    renderFacts();
     $('#board-sub').textContent = graded ? `${graded} of ${total} final` : `${data.entries} ${data.entries === 1 ? 'player' : 'players'}`;
 
     const myName = data.me && data.me.username.toLowerCase();
@@ -358,6 +437,15 @@
     const more = $('#more');
     more.hidden = !hidden && !showAll;
     more.textContent = showAll ? 'Show top 10' : 'Show full leaderboard';
+  }
+
+  function renderFacts() {
+    const { rows, graded } = data.leaderboard;
+    const g = georgesRow();
+    const fans = rows.filter(r => !r.expert);
+    $('#f-players').textContent = data.entries;
+    $('#f-final').textContent = `${graded}/${playable().length}`;
+    $('#f-beat').textContent = g && graded ? fans.filter(r => r.score > g.score).length : 0;
   }
 
   const ago = ms => {
@@ -511,6 +599,8 @@
     else { renderDuel(); updateEntry(); renderFeed(); }
   }, 30000);
   load();
+  loadSeason();
+  setInterval(loadSeason, 60000);
   loadStandings();
   setInterval(loadStandings, 30 * 60000);
 })();

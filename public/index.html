@@ -28,7 +28,7 @@
       <a href="#board">Leaderboard</a>
       <a href="#nhl">Standings</a>
       <a href="#rules">Rules</a>
-      <a href="/results">Past results</a>
+      <a href="/results">Season and results</a>
     </nav>
     <div class="hdr-right">
       <span class="hdr-pill" id="hdr-pill" hidden></span>
@@ -71,19 +71,34 @@
 
 <!-- Prize pool (amounts come from the server's PRIZES list) -->
 <div class="wrap">
-  <section class="prize" aria-labelledby="prize-h">
+  <section class="prize" aria-label="Prizes">
     <div class="prize-top">
       <div class="prize-amount">
-        <span class="prize-num" id="pool">$1,000</span>
-        <span class="prize-sub">prize pool</span>
+        <span class="prize-num" id="pool">$500</span>
+        <span class="prize-sub">every Saturday</span>
       </div>
-      <h2 class="prize-head" id="prize-h">The top 10 split <span id="pool-2">$1,000</span> this Saturday</h2>
+      <h2 class="prize-head" id="prize-h">The top 10 split $500 every Saturday</h2>
       <a class="prize-cta" href="https://betgrw.com" target="_blank" rel="noopener">Deposit at betgrw.com</a>
     </div>
-    <ol class="payouts" id="payouts" aria-label="Prize for each place">
-      <li><span>1st</span><b>$300</b></li><li><span>2nd</span><b>$200</b></li><li><span>3rd</span><b>$125</b></li><li><span>4th</span><b>$100</b></li><li><span>5th</span><b>$75</b></li>
-      <li><span>6th</span><b>$60</b></li><li><span>7th</span><b>$45</b></li><li><span>8th</span><b>$35</b></li><li><span>9th</span><b>$30</b></li><li><span>10th</span><b>$30</b></li>
+    <ol class="payouts" id="payouts" aria-label="Weekly prize for each place">
+      <li><span>1st</span><b>$150</b></li><li><span>2nd</span><b>$100</b></li><li><span>3rd</span><b>$70</b></li><li><span>4th</span><b>$50</b></li><li><span>5th</span><b>$40</b></li>
+      <li><span>6th</span><b>$30</b></li><li><span>7th</span><b>$22</b></li><li><span>8th</span><b>$16</b></li><li><span>9th</span><b>$12</b></li><li><span>10th</span><b>$10</b></li>
     </ol>
+    <div class="prize-season">
+      <div class="prize-top">
+        <div class="prize-amount">
+          <span class="prize-num" id="s-pool">$5,000</span>
+          <span class="prize-sub">season pool</span>
+        </div>
+        <h2 class="prize-head" id="s-head">The top 20 of the season split $5,000</h2>
+        <a class="prize-cta ghost" href="/results#season">Season standings</a>
+      </div>
+      <ol class="payouts" id="s-payouts" aria-label="Season prize for each place">
+        <li><span>1st</span><b>$1,500</b></li><li><span>2nd</span><b>$900</b></li><li><span>3rd</span><b>$600</b></li><li><span>4th</span><b>$400</b></li><li><span>5th</span><b>$300</b></li>
+        <li><span>6th</span><b>$250</b></li><li><span>7th</span><b>$200</b></li><li><span>8th–10th</span><b>$125</b></li><li><span>11th–15th</span><b>$55</b></li><li><span>16th–20th</span><b>$40</b></li>
+      </ol>
+      <p class="season-note" id="s-note">Season points are your correct picks added up over every Saturday from Nov 14 to Apr 10. Miss a Saturday and it counts as 0.</p>
+    </div>
     <p class="prize-rule">
       <svg class="prize-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="4.6" r="1" fill="currentColor"/></svg>
       <span>To be eligible, you need to deposit at least <b>$20</b> on betgrw.com in the <b>last 30 days</b>.</span>
@@ -152,7 +167,10 @@
         <li>Each correct pick is worth one point. Winners and points update automatically as games end.</li>
         <li>Finish ahead of Georges and your name gets the “Beat Georges” mark.</li>
         <li>Postponed or cancelled games don’t count for anyone.</li>
-        <li>Prize pool: the top 10 players split $1,000. 1st $300, 2nd $200, 3rd $125, 4th $100, 5th $75, 6th $60, 7th $45, 8th $35, 9th $30, 10th $30.</li>
+        <li>Weekly prize: the top 10 players each Saturday split $500. 1st $150, 2nd $100, 3rd $70, 4th $50, 5th $40, 6th $30, 7th $22, 8th $16, 9th $12, 10th $10.</li>
+        <li>Season prize: the top 20 players of the 2026–27 season split $5,000. 1st $1,500, 2nd $900, 3rd $600, 4th $400, 5th $300, 6th $250, 7th $200, 8th–10th $125 each, 11th–15th $55 each, 16th–20th $40 each.</li>
+        <li>Season points are your correct picks added up over every Saturday from November 14, 2026 to April 10, 2027. A Saturday you miss counts as 0. Season prizes are paid after the last Saturday.</li>
+        <li>Use the same BetGRW username every week, from the same device. Your username is saved to your device the first time you enter, so nobody else can use it this season.</li>
         <li>Ties: players with the same score share the prizes for the places they cover. For example, two players tied for 2nd split the 2nd and 3rd place prizes.</li>
         <li>Georges is shown on the leaderboard for fun but doesn’t take a place or a prize.</li>
         <li>If a top-10 player isn’t eligible, the next eligible player moves up.</li>
@@ -168,6 +186,10 @@
         <h2 id="board-h">Leaderboard</h2>
         <span class="block-aside" id="board-sub"></span>
       </header>
+      <div class="seg board-seg" role="group" aria-label="Choose a leaderboard">
+        <button type="button" data-board="week" aria-pressed="true">This Saturday</button>
+        <button type="button" data-board="season" aria-pressed="false">Season</button>
+      </div>
       <table>
         <thead><tr><th scope="col">#</th><th scope="col">Player</th><th scope="col" class="num">Pts</th><th scope="col" class="num prize-col">Prize</th></tr></thead>
         <tbody id="rows"></tbody>

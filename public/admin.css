@@ -363,3 +363,6 @@ tr.is-me { background: #E3ECFB; }
 .advanced { margin-top: 40px; padding: 16px 0; border-top: 2px solid var(--ink); }
 .advanced summary { font-weight: 700; font-size: 16px; cursor: pointer; }
 .advanced .date-form { margin-top: 12px; }
+
+.release { margin-top: 28px; }
+.release .date-form input { min-width: 220px; }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Past results | Beat Georges</title>
+<title>Season and results | Beat Georges</title>
 <meta name="description" content="Every finished Saturday of the Beat Georges NHL Pick’em: winners, final standings and Georges Laraque’s record.">
 <meta name="theme-color" content="#0A1128">
 <link rel="icon" href="favicon.png" type="image/png">
@@ -22,7 +22,7 @@
     <a class="logo" href="/"><img src="logo.png" alt="BetGRW" width="140" height="34"></a>
     <nav class="hnav" aria-label="Sections">
       <a href="/">This Saturday</a>
-      <a href="/results" class="on" aria-current="page">Past results</a>
+      <a href="/results" class="on" aria-current="page">Season and results</a>
       <a href="/#rules">Rules</a>
     </nav>
     <div class="hdr-right">
@@ -37,8 +37,8 @@
     <div class="hub-id">
       <img class="hub-badge" src="apple-touch-icon.png" alt="" width="56" height="56">
       <div>
-        <h1 id="res-title">Past results</h1>
-        <p class="hub-meta" id="res-sub">Every finished Saturday: winners, final standings and Georges’ record</p>
+        <h1 id="res-title">Season and results</h1>
+        <p class="hub-meta" id="res-sub">The season table and every finished Saturday</p>
       </div>
     </div>
     <dl class="hub-facts" id="res-facts" hidden></dl>
@@ -47,6 +47,22 @@
 
 <main class="wrap page single" id="results">
   <p class="res-back" id="res-back" hidden><a href="/results">All Saturdays</a></p>
+
+  <!-- Season standings -->
+  <section class="block" id="season" aria-labelledby="season-h" hidden>
+    <header class="block-head">
+      <h2 id="season-h">Season standings</h2>
+      <span class="block-aside" id="season-sub"></span>
+    </header>
+    <div class="rtable-wrap">
+      <table class="rtable stable">
+        <thead><tr><th scope="col">#</th><th scope="col">Player</th><th scope="col" class="num">Pts</th><th scope="col" class="num">Weeks</th><th scope="col" class="num">Weekly wins</th><th scope="col" class="num">Best week</th><th scope="col" class="num">Prize</th></tr></thead>
+        <tbody id="season-rows"></tbody>
+      </table>
+    </div>
+    <button class="more" id="season-more" type="button" hidden>Show everyone</button>
+    <p class="board-note" id="season-note"></p>
+  </section>
 
   <!-- List of Saturdays -->
   <section class="block" id="list" aria-labelledby="list-h" hidden>

@@ -71,7 +71,8 @@
         <input id="find" type="search" placeholder="Find a player" autocomplete="off">
         <span class="grid-count" id="grid-count"></span>
         <button class="remove-sel" id="remove-sel" type="button" disabled>Remove selected</button>
-        <button class="text-btn" id="csv" type="button">Download as spreadsheet (CSV)</button>
+        <button class="text-btn" id="csv" type="button">Download this Saturday (CSV)</button>
+        <button class="text-btn" id="csv-season" type="button">Download season table (CSV)</button>
       </div>
       <div class="grid-wrap">
         <table class="grid">
@@ -97,6 +98,19 @@
       </form>
       <p class="status" id="date-status" role="status"></p>
     </details>
+
+    <section class="block release">
+      <div class="block-head">
+        <h2>Release a username</h2>
+        <p class="block-sub">Each username belongs to the device that first used it this season, so nobody can take someone else’s season points. If a player gets a new phone, release their username here so they can enter with it again.</p>
+      </div>
+      <form id="release-form" class="date-form">
+        <label for="release-name">Username</label>
+        <input id="release-name" type="text" autocomplete="off" spellcheck="false">
+        <button class="submit" type="submit">Release</button>
+      </form>
+      <p class="status" id="release-status" role="status"></p>
+    </section>
   </div>
 </main>
 <script src="teams.js?v=__V__"></script>

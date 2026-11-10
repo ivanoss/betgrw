@@ -245,6 +245,33 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
 
+  $('#csv-season').addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/season', { cache: 'no-store' });
+      const d = await res.json();
+      const q = v => `"${String(v).replace(/"/g, '""')}"`;
+      const lines = [['Place', 'Player', 'Season points', 'Saturdays played', 'Weekly wins', 'Best week', 'Season prize'].map(q).join(',')];
+      (d.rows || []).forEach(r => lines.push([r.rank, r.name, r.score, r.weeks, r.wins || 0, r.best, r.prize ? r.prize.toFixed(2) : ''].map(q).join(',')));
+      const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `season-${d.start}-to-${d.end}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } catch { say('#rows-status', 'The season table couldn’t load. Try again.', 'error'); }
+  });
+  $('#release-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = $('#release-name').value.trim();
+    if (!name) return;
+    if (!confirm(`Release ${name}? The next device to enter with this username will own it for the rest of the season.`)) return;
+    try {
+      await api('release-username', { username: name });
+      say('#release-status', `Released ${name}. They can enter with it from their new device now.`, 'ok');
+      $('#release-name').value = '';
+    } catch (err) { say('#release-status', err.message, 'error'); }
+  });
+
   function render() {
     renderSatbar();
     renderPicks();

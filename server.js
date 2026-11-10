@@ -24,8 +24,18 @@ const RESERVED = ['georges', 'laraque', 'georgeslaraque', 'admin', 'betgrw', 'mo
 
 /* ---------- Prize pool ----------
    Edit these amounts to change the payouts. Place 1 first. They add up to the pool shown on the site. */
-const PRIZES = [300, 200, 125, 100, 75, 60, 45, 35, 30, 30];
+// Weekly: paid every Saturday. Place 1 first.
+const PRIZES = [150, 100, 70, 50, 40, 30, 22, 16, 12, 10];
 const PRIZE_POOL = PRIZES.reduce((a, b) => a + b, 0);
+// Season: total correct picks over every Saturday from start to end. Paid once, after the last Saturday.
+const SEASON = {
+  name: '2026–27 season',
+  start: /^\d{4}-\d{2}-\d{2}$/.test(process.env.SEASON_START || '') ? process.env.SEASON_START : '2026-11-14', // first Saturday that counts
+  end: /^\d{4}-\d{2}-\d{2}$/.test(process.env.SEASON_END || '') ? process.env.SEASON_END : '2027-04-10',       // last Saturday of the NHL regular season
+  prizes: [1500, 900, 600, 400, 300, 250, 200, 125, 125, 125, 55, 55, 55, 55, 55, 40, 40, 40, 40, 40]
+};
+SEASON.pool = SEASON.prizes.reduce((a, b) => a + b, 0);
+SEASON.weeks = (() => { let n = 0; for (let d = new Date(SEASON.start + 'T12:00:00Z'); d <= new Date(SEASON.end + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + 7)) n++; return n; })();
 
 /* ---------- Dates ----------
    The contest is Saturday games only.
@@ -262,20 +272,25 @@ function scorePicks(picks, games) {
   for (const g of games) if (g.winner && picks[g.id] === g.winner) correct++;
   return correct;
 }
+// Ranks and prizes count players only (rows must be sorted best first, with .score).
+// Tied players share the prizes for the places they cover.
+function splitPrizes(rows, prizes) {
+  for (let i = 0; i < rows.length;) {
+    let j = i;
+    while (j < rows.length && rows[j].score === rows[i].score) j++;
+    let pot = 0;
+    for (let k = i; k < j; k++) pot += prizes[k] || 0;
+    const each = pot ? Math.floor(pot / (j - i) * 100) / 100 : 0;
+    for (let k = i; k < j; k++) { rows[k].rank = i + 1; rows[k].prize = each; rows[k].tied = j - i > 1; }
+    i = j;
+  }
+  return rows;
+}
 function leaderboard(contest, games) {
   const graded = games.filter(g => g.winner).length;
   const fans = contest.entries.map(e => ({ name: e.username, score: scorePicks(e.picks, games) }));
   fans.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
-  // Ranks and prizes count players only. Tied players share the prizes for the places they cover.
-  for (let i = 0; i < fans.length;) {
-    let j = i;
-    while (j < fans.length && fans[j].score === fans[i].score) j++;
-    let pot = 0;
-    for (let k = i; k < j; k++) pot += PRIZES[k] || 0;
-    const each = pot ? Math.floor(pot / (j - i) * 100) / 100 : 0;
-    for (let k = i; k < j; k++) { fans[k].rank = i + 1; fans[k].prize = each; fans[k].tied = j - i > 1; }
-    i = j;
-  }
+  splitPrizes(fans, PRIZES);
   const rows = [...fans];
   const expertCount = playable(games).filter(g => contest.expert[g.id]).length;
   if (expertCount) {
@@ -286,6 +301,23 @@ function leaderboard(contest, games) {
   return { graded, rows, prizes: PRIZES, pool: PRIZE_POOL };
 }
 const hashToken = t => crypto.createHash('sha256').update(String(t)).digest('hex');
+// username (lowercase) -> device key hash. Built from this season's entries the first time it's needed.
+async function usernameOwners() {
+  let reg = await getRecord('usernames', null);
+  if (reg && typeof reg === 'object') return reg;
+  reg = {};
+  const dates = (await contestDates()).filter(d => d >= SEASON.start && d <= SEASON.end);
+  for (const d of dates) { // later Saturdays win: that's the key the player's device holds now
+    const c = await loadContest(d);
+    for (const e of c.entries) if (e.tokenHash) reg[e.username.toLowerCase()] = e.tokenHash;
+  }
+  await putRecord('usernames', reg);
+  return reg;
+}
+async function claimUsername(name, tokenHash) {
+  const reg = await usernameOwners();
+  if (!reg[name.toLowerCase()]) { reg[name.toLowerCase()] = tokenHash; await putRecord('usernames', reg); }
+}
 function findByToken(contest, token) {
   if (!token) return null;
   const h = hashToken(token);
@@ -341,6 +373,40 @@ async function handleResultsDay(res, date) {
   if (!isDate(date) || !(await contestDates()).includes(date)) return send(res, 404, { error: 'No contest on that date.' });
   const r = await resultsFor(date);
   send(res, 200, { ...r, summary: summarize(r) });
+}
+
+/* ---------- Season standings ----------
+   Adds up every Saturday in the season. A Saturday a player skips counts as 0. */
+let seasonCache = null;
+async function seasonStandings() {
+  if (seasonCache && Date.now() - seasonCache.at < 60e3) return seasonCache.body;
+  const current = await contestDate();
+  const dates = (await contestDates()).filter(d => d >= SEASON.start && d <= SEASON.end && d <= current);
+  const players = new Map();
+  let georges = 0, weeksDone = 0;
+  for (const d of dates) {
+    let r;
+    try { r = await resultsFor(d); } catch { continue; }
+    if (!r.graded) continue; // no game finished yet that day
+    weeksDone++;
+    for (const row of r.rows) {
+      if (row.expert) { georges += row.score; continue; }
+      const key = row.name.toLowerCase();
+      const p = players.get(key) || { name: row.name, score: 0, weeks: 0, best: 0, wins: 0 };
+      p.name = row.name; p.score += row.score; p.weeks++; p.best = Math.max(p.best, row.score);
+      if (row.rank === 1 && r.complete) p.wins++;
+      players.set(key, p);
+    }
+  }
+  const rows = splitPrizes([...players.values()].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name)), SEASON.prizes)
+    .map(({ tied, ...r }) => r);
+  const finished = current > SEASON.end || (dates.includes(SEASON.end) && (await resultsFor(SEASON.end).catch(() => ({}))).complete);
+  const body = {
+    name: SEASON.name, start: SEASON.start, end: SEASON.end, weeks: SEASON.weeks, weeksDone,
+    pool: SEASON.pool, prizes: SEASON.prizes, finished: !!finished, georges: weeksDone ? georges : null, rows
+  };
+  seasonCache = { at: Date.now(), body };
+  return body;
 }
 
 /* ---------- HTTP helpers ---------- */
@@ -413,6 +479,7 @@ async function handleState(req, res) {
   send(res, 200, {
     date, now: Date.now(), lockAt: lockTime(games), locked,
     games, expert, split,
+    season: { name: SEASON.name, pool: SEASON.prizes.reduce((x, y) => x + y, 0), prizes: SEASON.prizes, start: SEASON.start, end: SEASON.end, weeks: SEASON.weeks },
     recent: [...contest.entries].sort((a, b) => (b.updated || 0) - (a.updated || 0)).slice(0, 8)
       .map(e => ({ name: e.username, at: e.updated || e.created, edited: (e.updated || 0) - (e.created || 0) > 1000 })),
     me: me ? { username: me.username, picks: me.picks, score: scorePicks(me.picks, games) } : null,
@@ -445,9 +512,19 @@ async function handleEntry(req, res, ip) {
   }
 
   const contest = await loadContest(date);
-  const mine = findByToken(contest, req.headers['x-entry-token']);
+  const sent = String(req.headers['x-entry-token'] || '');
+  const mine = findByToken(contest, sent);
   const taken = contest.entries.find(e => e.username.toLowerCase() === username.toLowerCase());
-  if (taken && taken !== mine) return send(res, 409, { error: 'That username is taken tonight. Pick another one.' });
+  if (taken && taken !== mine) return send(res, 409, { error: 'That username is taken this Saturday. Pick another one.' });
+
+  // Season points follow the username, so each name belongs to the device that first used it this season.
+  const owners = await usernameOwners();
+  const deviceHash = /^[0-9a-f]{48}$/.test(sent) ? hashToken(sent) : null;
+  const owner = owners[username.toLowerCase()];
+  const ownHash = mine ? mine.tokenHash : deviceHash;
+  if (owner && owner !== ownHash) {
+    return send(res, 409, { error: 'That username is already used by another player this season. If it’s yours, enter from the device you used before, or contact BetGRW support.' });
+  }
 
   const net = networkId(ip);
   if (!mine && contest.entries.filter(e => e.net === net).length >= MAX_PER_NETWORK) {
@@ -455,12 +532,16 @@ async function handleEntry(req, res, ip) {
   }
 
   let token = null;
-  if (mine) { mine.username = username; mine.picks = picks; mine.updated = Date.now(); if (!mine.net) mine.net = net; }
+  let tokenHash;
+  if (mine) { mine.username = username; mine.picks = picks; mine.updated = Date.now(); if (!mine.net) mine.net = net; tokenHash = mine.tokenHash; }
   else {
-    token = crypto.randomBytes(24).toString('hex');
-    contest.entries.push({ username, picks, tokenHash: hashToken(token), net, created: Date.now(), updated: Date.now() });
+    // Returning players keep their device key from earlier Saturdays; new players get one.
+    if (deviceHash) tokenHash = deviceHash;
+    else { token = crypto.randomBytes(24).toString('hex'); tokenHash = hashToken(token); }
+    contest.entries.push({ username, picks, tokenHash, net, created: Date.now(), updated: Date.now() });
   }
   await saveContest(date, contest);
+  if (!owner) await claimUsername(username, tokenHash);
   send(res, 200, { ok: true, username, token, updated: !!mine });
 }
 
@@ -499,6 +580,7 @@ async function handleAdmin(req, res, route, url) {
   const body = await readBody(req);
   const validNet = n => typeof n === 'string' && /^[0-9a-f]{10}$/.test(n);
   resultsListCache = null;
+  seasonCache = null;
 
   if (route === 'picks') {
     const games = await getGames(date);
@@ -558,6 +640,14 @@ async function handleAdmin(req, res, route, url) {
     await putRecord('blocked', blocked);
     return send(res, 200, { ok: true, removed });
   }
+  if (route === 'release-username') { // let a player use their name from a new device
+    const reg = await usernameOwners();
+    const key = String(body.username || '').toLowerCase();
+    if (!reg[key]) return send(res, 404, { error: 'That username isn’t claimed.' });
+    delete reg[key];
+    await putRecord('usernames', reg);
+    return send(res, 200, { ok: true });
+  }
   if (route === 'settings') {
     const d = body.contestDate;
     if (d && !isDate(d)) return send(res, 400, { error: 'Use a date like 2026-11-14.' });
@@ -594,6 +684,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/state' && req.method === 'GET') return await handleState(req, res);
     if (url.pathname === '/api/entry' && req.method === 'POST') return await handleEntry(req, res, ip);
     if (url.pathname === '/api/standings' && req.method === 'GET') return send(res, 200, { teams: await getStandings() });
+    if (url.pathname === '/api/season' && req.method === 'GET') return send(res, 200, await seasonStandings());
     if (url.pathname === '/api/results' && req.method === 'GET') return await handleResultsList(res);
     if (url.pathname.startsWith('/api/results/') && req.method === 'GET') return await handleResultsDay(res, url.pathname.slice(13));
     if (url.pathname.startsWith('/api/admin/')) return await handleAdmin(req, res, url.pathname.slice(11), url);
