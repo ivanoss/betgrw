@@ -90,6 +90,17 @@ async function loadContest(date) {
 }
 const saveContest = (date, contest) => putRecord('contest-' + date, contest);
 
+/* ---------- Team logos ----------
+   Official logo files, as listed by the NHL's own feed. Only NHL-hosted addresses are passed on.
+   The light version is for white backgrounds, the dark version for the navy bars. */
+const LOGO_OK = /^https:\/\/assets\.nhle\.com\/[\w\/.-]+\.svg$/;
+function logos(light, dark) {
+  const l = typeof light === 'string' && LOGO_OK.test(light) ? light : null;
+  let d = typeof dark === 'string' && LOGO_OK.test(dark) ? dark : null;
+  if (!d && l && l.endsWith('_light.svg')) d = l.replace(/_light\.svg$/, '_dark.svg');
+  return l ? { logo: l, logoDark: d || l } : {};
+}
+
 /* ---------- Live NHL games ---------- */
 const cache = new Map(); // date -> { at, games, ttl }
 function normalizeGame(g) {
@@ -97,7 +108,8 @@ function normalizeGame(g) {
     abbr: t.abbrev,
     place: t.placeName?.default || '',
     name: t.commonName?.default || t.name?.default || t.abbrev,
-    score: typeof t.score === 'number' ? t.score : null
+    score: typeof t.score === 'number' ? t.score : null,
+    ...logos(t.logo, t.darkLogo)
   });
   const sched = g.gameScheduleState || 'OK';
   let state = 'upcoming';
@@ -171,7 +183,7 @@ function mockStandings() {
   for (const [div, list] of Object.entries(divs)) {
     list.forEach((abbr, i) => {
       const gp = 16 + (i % 3), w = 12 - i, otl = i % 3, l = gp - w - otl;
-      teams.push({ abbr, name: abbr, conf: div === 'Atlantic' || div === 'Metropolitan' ? 'Eastern' : 'Western', div, gp, w, l, otl, pts: w * 2 + otl });
+      teams.push({ abbr, name: abbr, ...logos(`https://assets.nhle.com/logos/nhl/svg/${abbr}_light.svg`), conf: div === 'Atlantic' || div === 'Metropolitan' ? 'Eastern' : 'Western', div, gp, w, l, otl, pts: w * 2 + otl });
     });
   }
   return teams;
@@ -188,6 +200,7 @@ async function getStandings() {
       teams = (raw.standings || []).map(t => ({
         abbr: t.teamAbbrev?.default || '',
         name: t.teamCommonName?.default || t.teamName?.default || '',
+        ...logos(t.teamLogo),
         conf: t.conferenceName || '',
         div: t.divisionName || '',
         gp: t.gamesPlayed ?? 0, w: t.wins ?? 0, l: t.losses ?? 0, otl: t.otLosses ?? 0, pts: t.points ?? 0
@@ -387,7 +400,7 @@ async function serveStatic(req, res, pathname) {
       'Content-Type': MIME[ext] || 'application/octet-stream',
       'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=300',
       'X-Content-Type-Options': 'nosniff',
-      'Content-Security-Policy': "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'"
+      'Content-Security-Policy': "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://assets.nhle.com; connect-src 'self'; frame-ancestors 'self'"
     });
     res.end(data);
   } catch { send(res, 404, 'Not found'); }

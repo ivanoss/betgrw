@@ -1,3 +1,6 @@
+// Set to false to show team color squares instead of the official NHL logos.
+window.SHOW_TEAM_LOGOS = true;
+
 // Team colors: [jersey color, trim color, city, name]
 window.TEAMS = {
   ANA: ['#CF4520', '#111111', 'Anaheim', 'Ducks'],

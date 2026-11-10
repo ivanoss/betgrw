@@ -62,6 +62,24 @@
   const playable = () => data.games.filter(g => g.state !== 'void');
   const info = t => window.teamInfo(t);
   const dot = t => { const i = info(t); return `<i class="dot" style="--c:${i.color};--t:${i.trim}" aria-hidden="true"></i>`; };
+  // Real team logo from the NHL feed; falls back to the color square if it's missing or fails to load
+  const SHOW_LOGOS = window.SHOW_TEAM_LOGOS !== false;
+  const logo = (t, onDark) => {
+    const src = onDark ? (t.logoDark || t.logo) : t.logo;
+    if (!SHOW_LOGOS || !src) return dot(t);
+    const i = info(t);
+    return `<img class="tlogo" src="${esc(src)}" alt="" width="24" height="24" loading="lazy" decoding="async" data-c="${esc(i.color)}" data-t="${esc(i.trim)}">`;
+  };
+  document.addEventListener('error', e => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement) || !img.classList.contains('tlogo')) return;
+    const d = document.createElement('i');
+    d.className = 'dot';
+    d.setAttribute('aria-hidden', 'true');
+    d.style.setProperty('--c', img.dataset.c);
+    d.style.setProperty('--t', img.dataset.t);
+    img.replaceWith(d);
+  }, true);
   function statusText(g) {
     if (g.state === 'void') return 'Postponed';
     if (g.state === 'upcoming') return fmtTime(g.start);
@@ -95,7 +113,7 @@
     el.innerHTML = data.games.map(g => {
       const team = t => {
         const cls = g.winner ? (g.winner === t.abbr ? 'won' : 'lost') : '';
-        return `<span class="chip-team ${cls}">${dot(t)}${esc(t.abbr)}</span>`;
+        return `<span class="chip-team ${cls}">${logo(t, true)}${esc(t.abbr)}</span>`;
       };
       return `<li class="chip is-${g.state}"><span class="chip-status">${esc(statusText(g))}</span>${team(g.away)}${team(g.home)}</li>`;
     }).join('');
@@ -154,7 +172,7 @@
         else if (g.state === 'live') { cls = 'live'; res = 'Live'; }
         return `<li class="xrow ${cls}">
           <span class="xmatch">${esc(g.away.abbr)} at ${esc(g.home.abbr)}</span>
-          <span class="xpick">${dot(t)}<span>${esc(info(t).city)} ${esc(info(t).name)}</span></span>
+          <span class="xpick">${logo(t)}<span>${esc(info(t).city)} ${esc(info(t).name)}</span></span>
           <span class="xres">${esc(res)}</span></li>`;
       }).join('');
     }
@@ -201,7 +219,7 @@
         const team = t => {
           const i = info(t);
           const cls = g.winner ? (g.winner === t.abbr ? 'won' : 'lost') : '';
-          return `<span class="mteam ${cls}">${dot(t)}<span><span class="city">${esc(i.city)} </span>${esc(i.name)}</span></span>`;
+          return `<span class="mteam ${cls}">${logo(t)}<span><span class="city">${esc(i.city)} </span>${esc(i.name)}</span></span>`;
         };
         const xp = data.expert[g.id];
         const gl = xp
@@ -325,7 +343,7 @@
       const ti = info({ abbr: t.abbr, name: t.name });
       const cls = [nhlView !== 'League' && i === 2 && list.length > 3 ? 'cut' : '', playing.has(t.abbr) ? 'sat' : ''].join(' ');
       return `<tr class="${cls}"><td>${i + 1}</td>
-        <td><span class="nt">${dot({ abbr: t.abbr })}<b>${esc(t.abbr)}</b><span>${esc(ti.name)}</span></span></td>
+        <td><span class="nt">${logo(t)}<b>${esc(t.abbr)}</b><span>${esc(ti.name)}</span></span></td>
         <td class="num">${t.gp}</td><td class="num">${t.w}</td><td class="num">${t.l}</td><td class="num">${t.otl}</td><td class="num p">${t.pts}</td></tr>`;
     }).join('');
     $('#nhl-sub').textContent = nhlView === 'League' ? 'All 32 teams' : nhlView + ' Division';

@@ -24,7 +24,7 @@ const games = matchups.map(([a, h], i) => {
   const g = {
     id: 2026020900 + i, gameType: 2, gameDate: date, startTimeUTC: start.toISOString(),
     gameState: 'FUT', gameScheduleState: 'OK',
-    awayTeam: { abbrev: a, name: { default: a } }, homeTeam: { abbrev: h, name: { default: h } }
+    awayTeam: { abbrev: a, name: { default: a }, logo: `https://assets.nhle.com/logos/nhl/svg/${a}_light.svg` }, homeTeam: { abbrev: h, name: { default: h }, logo: `https://assets.nhle.com/logos/nhl/svg/${h}_light.svg` }
   };
   if (live) {
     if (i < 3) { g.gameState = 'OFF'; g.awayTeam.score = [2, 4, 3][i]; g.homeTeam.score = [3, 1, 2][i]; g.gameOutcome = { lastPeriodType: i === 2 ? 'OT' : 'REG' }; }
