@@ -117,10 +117,6 @@
       };
       return `<li class="chip is-${g.state}"><span class="chip-status">${esc(statusText(g))}</span>${team(g.away)}${team(g.home)}</li>`;
     }).join('');
-    const live = playable().filter(g => g.state === 'live').length;
-    const pill = $('#live-pill');
-    pill.hidden = !live;
-    pill.textContent = live + ' live';
   }
 
   function bump(id, value) {
@@ -155,6 +151,31 @@
     else s = `${final} of ${games.length} games final${live ? `, ${live} in progress` : ''}.`;
     $('#sb-strip').textContent = s;
     $('#lockline').textContent = !data.locked && data.lockAt ? `Picks lock in ${untilText(data.lockAt - Date.now())}` : '';
+    renderHeader(live, final, games.length);
+  }
+
+  /* ---------- Header: status pill and your entry ---------- */
+  const CLOCK = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 4.5V8l2.5 1.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  function renderHeader(live, final, total) {
+    const pill = $('#hdr-pill');
+    pill.className = 'hdr-pill';
+    if (live) { pill.classList.add('live'); pill.textContent = `${live} live`; pill.hidden = false; }
+    else if (!data.locked && data.lockAt) { pill.innerHTML = `${CLOCK}<span>Picks lock in ${esc(untilText(data.lockAt - Date.now()))}</span>`; pill.hidden = false; }
+    else if (total && final === total) { pill.textContent = 'Final results'; pill.hidden = false; }
+    else pill.hidden = true;
+
+    const me = $('#hdr-me');
+    if (data.me) {
+      me.className = 'hdr-me';
+      me.href = '#board';
+      me.innerHTML = `<span class="ini" aria-hidden="true">${esc(data.me.username.slice(0, 2).toUpperCase())}</span><span class="nm">${esc(data.me.username)}</span><span class="pt" title="Your points">${data.me.score}</span>`;
+      me.setAttribute('aria-label', `${data.me.username}, ${data.me.score} points. See the leaderboard`);
+    } else {
+      me.className = 'hdr-me cta';
+      me.href = data.locked ? '#board' : '#picks';
+      me.textContent = data.locked ? 'See results' : 'Make your picks';
+      me.removeAttribute('aria-label');
+    }
   }
 
   function renderExpert() {
@@ -374,13 +395,40 @@
   $('#username').addEventListener('input', () => { if (data) updateEntry(); });
   $('#more').addEventListener('click', () => { showAll = !showAll; renderBoard(); });
 
-  // Tabs and top menu: mark the tab that was used, open the rules when jumping to them
-  const tabs = [...document.querySelectorAll('.tabs a')];
-  document.querySelectorAll('.tabs a, .topnav a').forEach(a => a.addEventListener('click', () => {
-    const href = a.getAttribute('href');
-    tabs.forEach(t => t.classList.toggle('on', t.getAttribute('href') === href));
-    if (href === '#rules') $('#rules').open = true;
+  // Header menu: highlight the section you're looking at
+  const navLinks = [...document.querySelectorAll('.hnav a')];
+  const setOn = id => navLinks.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + id));
+  let spyPausedUntil = 0;
+  navLinks.forEach(a => a.addEventListener('click', () => {
+    const id = a.getAttribute('href').slice(1);
+    setOn(id);
+    spyPausedUntil = Date.now() + 1000;
+    if (id === 'rules') $('#rules').open = true;
   }));
+  $('#hdr-me').addEventListener('click', e => setOn(e.currentTarget.getAttribute('href').slice(1)));
+  function spy() {
+    if (Date.now() < spyPausedUntil) return;
+    const wide = window.matchMedia('(min-width: 981px)').matches;
+    // On wide screens the leaderboard and standings sit beside the main column, so only the main column is tracked.
+    const ids = wide ? ['georges', 'picks', 'rules'] : ['georges', 'picks', 'rules', 'board', 'nhl'];
+    const line = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--hdr'), 10) + 90;
+    let current = ids[0];
+    for (const id of ids) {
+      const el = document.getElementById(id);
+      if (el && !el.hidden && el.getBoundingClientRect().top <= line) current = id;
+    }
+    if ((window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 4) {
+      const last = [...ids].reverse().find(id => { const el = document.getElementById(id); return el && !el.hidden; });
+      if (last && !wide) current = last;
+    }
+    setOn(current);
+  }
+  let spyQueued = false;
+  window.addEventListener('scroll', () => {
+    if (spyQueued) return;
+    spyQueued = true;
+    requestAnimationFrame(() => { spyQueued = false; spy(); });
+  }, { passive: true });
 
   function setStatus(msg, kind) {
     const s = $('#status');

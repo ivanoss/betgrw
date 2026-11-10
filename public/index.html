@@ -18,17 +18,22 @@
 <body>
 <a class="skip" href="#picks">Skip to your picks</a>
 
-<!-- Top bar -->
-<header class="topbar">
-  <div class="wrap topbar-in">
-    <a class="logo" href="/"><img src="logo.png" alt="BetGRW" width="132" height="32"></a>
-    <nav class="topnav" aria-label="Sections">
-      <a href="#picks">Pick’em</a>
+<!-- Header: fixed, never moves -->
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a class="logo" href="/"><img src="logo.png" alt="BetGRW" width="140" height="34"></a>
+    <nav class="hnav" aria-label="Sections">
+      <a href="#georges" class="on">Georges</a>
+      <a href="#picks">Your picks</a>
       <a href="#board">Leaderboard</a>
-      <a href="#georges">Georges</a>
+      <a href="#nhl">Standings</a>
       <a href="#rules">Rules</a>
     </nav>
-    <span class="live-badge" id="live-pill" hidden></span>
+    <div class="hdr-right">
+      <span class="hdr-pill" id="hdr-pill" hidden></span>
+      <a class="hdr-me" id="hdr-me" href="#picks">Make your picks</a>
+      <a class="hdr-cta" href="https://betgrw.com" target="_blank" rel="noopener">Deposit</a>
+    </div>
   </div>
 </header>
 
@@ -57,14 +62,6 @@
     <p class="hub-status"><span id="sb-strip">Loading Saturday’s games</span> <span class="hub-lock" id="lockline"></span></p>
   </div>
 </section>
-<nav class="tabs" aria-label="Page tabs">
-    <div class="wrap tabs-in">
-      <a href="#picks" class="on">Picks</a>
-      <a href="#georges">Georges’ picks</a>
-      <a href="#board">Leaderboard</a>
-      <a href="#rules">Rules</a>
-    </div>
-</nav>
 
 <!-- Prize -->
 <div class="wrap">
