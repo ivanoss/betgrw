@@ -366,3 +366,13 @@ tr.is-me { background: #E3ECFB; }
 
 .release { margin-top: 28px; }
 .release .date-form input { min-width: 220px; }
+.grid td.email { text-align: left; font-size: 12px; white-space: nowrap; }
+.grid td.email a { color: var(--ink); }
+.grid .optin { display: inline-block; margin-left: 4px; font-size: 11px; font-weight: 700; color: var(--green); background: #DDF5E7; border-radius: 3px; padding: 1px 5px; }
+.grid-tools .text-btn + .text-btn { margin-left: 0; }
+
+.intro-label { display: block; font-weight: 700; margin: 4px 0 6px; }
+.intro-label span { font-weight: 400; color: var(--ink-2); font-size: 14px; }
+#intro { width: 100%; font: inherit; font-size: 16px; padding: 10px 12px; border: 2px solid var(--ink); border-radius: 4px; resize: vertical; margin-bottom: 16px; }
+.game .why { grid-column: 1 / -1; border: 0; border-top: 1px solid var(--ice-2); padding: 9px 14px; font: inherit; font-size: 14px; background: #FBFCFD; }
+.game .why:focus { outline: 2px solid var(--blue); outline-offset: -2px; background: #fff; }

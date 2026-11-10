@@ -314,6 +314,18 @@ async function usernameOwners() {
   await putRecord('usernames', reg);
   return reg;
 }
+// Email list for contacting winners and, with consent, sending reminders. Admin-only; never sent to the public site.
+async function saveContact(email, username, optIn) {
+  const list = await getRecord('contacts', {});
+  const now = Date.now();
+  const c = list[email] || { email, usernames: [], first: now, optIn: false };
+  if (!c.usernames.includes(username)) c.usernames = [...c.usernames, username].slice(-5);
+  if (optIn && !c.optIn) c.optInAt = now;            // when consent was given (keep this record)
+  if (!optIn && c.optIn) c.optOutAt = now;           // unticked later: stop marketing emails
+  c.optIn = optIn; c.last = now;
+  list[email] = c;
+  await putRecord('contacts', list);
+}
 async function claimUsername(name, tokenHash) {
   const reg = await usernameOwners();
   if (!reg[name.toLowerCase()]) { reg[name.toLowerCase()] = tokenHash; await putRecord('usernames', reg); }
@@ -479,10 +491,11 @@ async function handleState(req, res) {
   send(res, 200, {
     date, now: Date.now(), lockAt: lockTime(games), locked,
     games, expert, split,
+    notes: Object.fromEntries(Object.entries(contest.notes || {}).filter(([id]) => ids.has(id))), intro: contest.intro || '',
     season: { name: SEASON.name, pool: SEASON.prizes.reduce((x, y) => x + y, 0), prizes: SEASON.prizes, start: SEASON.start, end: SEASON.end, weeks: SEASON.weeks },
     recent: [...contest.entries].sort((a, b) => (b.updated || 0) - (a.updated || 0)).slice(0, 8)
       .map(e => ({ name: e.username, at: e.updated || e.created, edited: (e.updated || 0) - (e.created || 0) > 1000 })),
-    me: me ? { username: me.username, picks: me.picks, score: scorePicks(me.picks, games) } : null,
+    me: me ? { username: me.username, picks: me.picks, email: me.email || '', optIn: !!me.optIn, score: scorePicks(me.picks, games) } : null,
     leaderboard: leaderboard(contest, games),
     entries: contest.entries.length
   });
@@ -503,6 +516,9 @@ async function handleEntry(req, res, ip) {
   const username = String(body.username || '').trim();
   if (!/^[A-Za-z0-9_.\-]{3,20}$/.test(username)) return send(res, 400, { error: 'Usernames are 3 to 20 letters, numbers, dots, dashes or underscores.' });
   if (RESERVED.includes(username.toLowerCase().replace(/[_.\-]/g, ''))) return send(res, 400, { error: 'That username is reserved. Pick another one.' });
+  const email = String(body.email || '').trim().toLowerCase();
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return send(res, 400, { error: 'Enter a valid email address. We use it to contact you if you win.' });
+  const optIn = body.optIn === true; // marketing consent: only when the box was ticked
 
   const picks = {};
   for (const g of playable(games)) {
@@ -514,6 +530,9 @@ async function handleEntry(req, res, ip) {
   const contest = await loadContest(date);
   const sent = String(req.headers['x-entry-token'] || '');
   const mine = findByToken(contest, sent);
+  if (contest.entries.some(e => e.email === email && e !== mine)) {
+    return send(res, 409, { error: 'That email already has an entry this Saturday. It’s one entry per person.' });
+  }
   const taken = contest.entries.find(e => e.username.toLowerCase() === username.toLowerCase());
   if (taken && taken !== mine) return send(res, 409, { error: 'That username is taken this Saturday. Pick another one.' });
 
@@ -533,15 +552,16 @@ async function handleEntry(req, res, ip) {
 
   let token = null;
   let tokenHash;
-  if (mine) { mine.username = username; mine.picks = picks; mine.updated = Date.now(); if (!mine.net) mine.net = net; tokenHash = mine.tokenHash; }
+  if (mine) { mine.username = username; mine.picks = picks; mine.email = email; mine.optIn = optIn; mine.updated = Date.now(); if (!mine.net) mine.net = net; tokenHash = mine.tokenHash; }
   else {
     // Returning players keep their device key from earlier Saturdays; new players get one.
     if (deviceHash) tokenHash = deviceHash;
     else { token = crypto.randomBytes(24).toString('hex'); tokenHash = hashToken(token); }
-    contest.entries.push({ username, picks, tokenHash, net, created: Date.now(), updated: Date.now() });
+    contest.entries.push({ username, picks, email, optIn, tokenHash, net, created: Date.now(), updated: Date.now() });
   }
   await saveContest(date, contest);
   if (!owner) await claimUsername(username, tokenHash);
+  await saveContact(email, username, optIn);
   send(res, 200, { ok: true, username, token, updated: !!mine });
 }
 
@@ -569,12 +589,16 @@ async function handleAdmin(req, res, route, url) {
       date, current, saturdays, gamesError,
       override: settings.contestDate || null, locked: isLocked(games), games, expert: contest.expert,
       prizes: PRIZES, pool: PRIZE_POOL, maxPerNetwork: MAX_PER_NETWORK,
-      okNets: contest.okNets, blocked,
+      okNets: contest.okNets, blocked, notes: contest.notes || {}, intro: contest.intro || '',
       entries: contest.entries.map(e => ({
-        username: e.username, created: e.created, updated: e.updated, picks: e.picks, net: e.net || '',
+        username: e.username, email: e.email || '', optIn: !!e.optIn, created: e.created, updated: e.updated, picks: e.picks, net: e.net || '',
         score: scorePicks(e.picks, games), rank: byName.get(e.username)?.rank, prize: byName.get(e.username)?.prize || 0
       }))
     });
+  }
+  if (route === 'contacts' && req.method === 'GET') {
+    const list = Object.values(await getRecord('contacts', {})).sort((a, b) => (b.last || 0) - (a.last || 0));
+    return send(res, 200, { contacts: list });
   }
   if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' });
   const body = await readBody(req);
@@ -591,6 +615,12 @@ async function handleAdmin(req, res, route, url) {
       if (p === g.away.abbr || p === g.home.abbr) expert[g.id] = p;
     }
     contest.expert = expert;
+    // Georges' take: a short intro for the week and an optional one-line reason per pick
+    const clean = (t, max) => String(t || '').replace(/\s+/g, ' ').trim().slice(0, max);
+    const notes = {};
+    for (const g of games) { const n = clean(body.notes?.[g.id], 160); if (n) notes[g.id] = n; }
+    contest.notes = notes;
+    contest.intro = clean(body.intro, 400);
     delete contest.final; // recompute saved results with the new picks
     await saveContest(date, contest);
     return send(res, 200, { ok: true, saved: Object.keys(expert).length });

@@ -24,11 +24,11 @@
     <a class="logo" href="/"><img src="logo.png" alt="BetGRW" width="140" height="34"></a>
     <nav class="hnav" aria-label="Sections">
       <a href="#georges" class="on">Georges</a>
-      <a href="#picks">Your picks</a>
+      <a href="#picks">Picks</a>
       <a href="#board">Leaderboard</a>
       <a href="#nhl">Standings</a>
       <a href="#rules">Rules</a>
-      <a href="/results">Season and results</a>
+      <a href="/results">Season</a>
     </nav>
     <div class="hdr-right">
       <span class="hdr-pill" id="hdr-pill" hidden></span>
@@ -118,6 +118,7 @@
           <p>BetGRW ambassador and former NHL enforcer. His winner in every Saturday game.</p>
         </div>
       </div>
+      <blockquote class="expert-take" id="x-intro" hidden></blockquote>
       <dl class="expert-stats">
         <div><dt>Record</dt><dd id="x-record">0–0</dd></div>
         <div><dt>Hit rate</dt><dd id="x-rate">–</dd></div>
@@ -134,11 +135,22 @@
       </header>
       <p class="block-sub" id="lock-sub">Pick the winner of every Saturday game. Overtime and shootouts count.</p>
 
-      <div class="name-row">
-        <label for="username">BetGRW username</label>
-        <input id="username" name="username" type="text" maxlength="20" autocomplete="nickname" spellcheck="false" placeholder="e.g. HabsFan_514" aria-describedby="username-help">
+      <div class="entry-form">
+        <div class="field">
+          <label for="username">BetGRW username</label>
+          <input id="username" name="username" type="text" maxlength="20" autocomplete="nickname" spellcheck="false" placeholder="e.g. HabsFan_514" aria-describedby="username-help">
+          <p id="username-help" class="help">Your betgrw.com username. It shows on the leaderboard.</p>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" maxlength="254" autocomplete="email" spellcheck="false" placeholder="you@example.com" aria-describedby="email-help">
+          <p id="email-help" class="help">We use it to contact you if you win. It’s never shown on the site.</p>
+        </div>
+        <label class="consent">
+          <input id="optin" type="checkbox">
+          <span>Email me a reminder before each Saturday and news and offers from BetGRW. You can unsubscribe at any time.</span>
+        </label>
         <div class="trap" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
-        <p id="username-help" class="help">Use your betgrw.com username so we can confirm you’re eligible for the prize. It shows on the leaderboard.</p>
       </div>
 
       <div class="day-head">
@@ -170,6 +182,8 @@
         <li>Weekly prize: the top 10 players each Saturday split $500. 1st $150, 2nd $100, 3rd $70, 4th $50, 5th $40, 6th $30, 7th $22, 8th $16, 9th $12, 10th $10.</li>
         <li>Season prize: the top 20 players of the 2026–27 season split $5,000. 1st $1,500, 2nd $900, 3rd $600, 4th $400, 5th $300, 6th $250, 7th $200, 8th–10th $125 each, 11th–15th $55 each, 16th–20th $40 each.</li>
         <li>Season points are your correct picks added up over every Saturday from November 14, 2026 to April 10, 2027. A Saturday you miss counts as 0. Season prizes are paid after the last Saturday.</li>
+        <li>Your email is required so we can contact you if you win. It’s never shown on the site. We only send reminders and offers if you tick the box, and you can unsubscribe at any time.</li>
+        <li>One entry per email each Saturday.</li>
         <li>Use the same BetGRW username every week, from the same device. Your username is saved to your device the first time you enter, so nobody else can use it this season.</li>
         <li>Ties: players with the same score share the prizes for the places they cover. For example, two players tied for 2nd split the 2nd and 3rd place prizes.</li>
         <li>Georges is shown on the leaderboard for fun but doesn’t take a place or a prize.</li>

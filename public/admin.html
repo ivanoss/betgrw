@@ -39,6 +39,8 @@
         <h2>Georges’ picks</h2>
         <p class="block-sub" id="slate-info"></p>
       </div>
+      <label class="intro-label" for="intro">Georges’ take for the week <span>(optional, shows at the top of his picks)</span></label>
+      <textarea id="intro" maxlength="400" rows="3" placeholder="e.g. Habs-Leafs is the one I’m sure about. Upset alert in Dallas."></textarea>
       <ol class="games" id="admin-games"></ol>
       <div class="admin-actions">
         <button class="submit" id="save-picks" type="button">Save Georges’ picks</button>
@@ -73,6 +75,7 @@
         <button class="remove-sel" id="remove-sel" type="button" disabled>Remove selected</button>
         <button class="text-btn" id="csv" type="button">Download this Saturday (CSV)</button>
         <button class="text-btn" id="csv-season" type="button">Download season table (CSV)</button>
+        <button class="text-btn" id="csv-emails" type="button">Download emails (CSV)</button>
       </div>
       <div class="grid-wrap">
         <table class="grid">

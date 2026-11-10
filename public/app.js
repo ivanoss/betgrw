@@ -55,6 +55,9 @@
       if (!Object.keys(draft).length && data.me) draft = { ...data.me.picks };
       const name = data.me ? data.me.username : store.get('bg_username');
       if (name && !$('#username').value) $('#username').value = name;
+      const mail = data.me ? data.me.email : store.get('bg_email');
+      if (mail && !$('#email').value) $('#email').value = mail;
+      $('#optin').checked = data.me ? !!data.me.optIn : store.get('bg_optin') === '1';
     }
     const valid = {};
     for (const g of data.games) if (draft[g.id] === g.away.abbr || draft[g.id] === g.home.abbr) valid[g.id] = draft[g.id];
@@ -244,12 +247,18 @@
         let cls = '', res = statusText(g);
         if (g.winner) { if (g.winner === pick) { cls = 'hit'; res = 'Called it'; w++; } else { cls = 'miss'; res = 'Missed'; l++; } }
         else if (g.state === 'live') { cls = 'live'; res = 'Live'; }
-        return `<li class="xrow ${cls}">
+        const note = data.notes && data.notes[g.id];
+        return `<li class="xrow ${cls} ${note ? 'has-note' : ''}">
           <span class="xmatch">${esc(g.away.abbr)} at ${esc(g.home.abbr)}</span>
           <span class="xpick">${logo(t)}<span>${esc(info(t).city)} ${esc(info(t).name)}</span></span>
-          <span class="xres">${esc(res)}</span></li>`;
+          <span class="xres">${esc(res)}</span>
+          ${note ? `<span class="xnote">${esc(note)}</span>` : ''}</li>`;
       }).join('');
     }
+    list.classList.toggle('with-notes', !!(data.notes && Object.keys(data.notes).length));
+    const intro = $('#x-intro');
+    intro.hidden = !data.intro;
+    intro.textContent = data.intro || '';
     $('#x-record').textContent = `${w}–${l}`;
     $('#x-rate').textContent = w + l ? Math.round(w / (w + l) * 100) + '%' : '–';
     updateAgree();
@@ -320,8 +329,11 @@
     updateAgree();
 
     const btn = $('#submit'), name = $('#username');
-    const same = data.me && games.every(g => data.me.picks[g.id] === draft[g.id]) && data.me.username === name.value.trim();
+    const same = data.me && games.every(g => data.me.picks[g.id] === draft[g.id]) && data.me.username === name.value.trim()
+      && (data.me.email || '') === $('#email').value.trim().toLowerCase() && !!data.me.optIn === $('#optin').checked;
     name.disabled = data.locked;
+    $('#email').disabled = data.locked;
+    $('#optin').disabled = data.locked;
     btn.classList.toggle('saved', !!same);
     if (data.locked) {
       btn.disabled = true;
@@ -522,6 +534,8 @@
     setStatus('');
   });
   $('#username').addEventListener('input', () => { if (data) updateEntry(); });
+  $('#email').addEventListener('input', () => { $('#email').removeAttribute('aria-invalid'); if (data) updateEntry(); });
+  $('#optin').addEventListener('change', () => { if (data) updateEntry(); });
   $('#more').addEventListener('click', () => { showAll = !showAll; renderBoard(); });
 
   // Header menu: highlight the section you're looking at
@@ -572,17 +586,26 @@
       $('#username').focus();
       return;
     }
+    const email = $('#email').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      setStatus('Add your email so we can contact you if you win.', 'error');
+      $('#email').setAttribute('aria-invalid', 'true');
+      $('#email').focus();
+      return;
+    }
     saving = true; updateEntry();
     try {
       const res = await fetch('/api/entry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-entry-token': store.get('bg_token') || '' },
-        body: JSON.stringify({ username, picks: draft, website: $('#website').value })
+        body: JSON.stringify({ username, email, optIn: $('#optin').checked, picks: draft, website: $('#website').value })
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Your picks weren’t saved. Try again.');
       if (json.token) store.set('bg_token', json.token);
       store.set('bg_username', json.username);
+      store.set('bg_email', email);
+      store.set('bg_optin', $('#optin').checked ? '1' : '0');
       setStatus(json.updated ? 'Picks updated.' : `You’re in, ${json.username}. Good luck against Georges.`, 'ok');
       saving = false;
       await load();

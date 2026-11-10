@@ -6,6 +6,7 @@
   let sat = sessionStorage.getItem('bg_admin_sat') || '';   // the Saturday being edited ('' = the one on the site)
   let state = null;
   let picks = {};
+  let notes = {};
   let find = '';
   const selected = new Set();
 
@@ -33,6 +34,8 @@
     try {
       state = await api('state');
       picks = { ...state.expert };
+      notes = { ...(state.notes || {}) };
+      $('#intro').value = state.intro || '';
       selected.clear();
       sessionStorage.setItem('bg_admin', pw);
       $('#login').hidden = true;
@@ -87,7 +90,8 @@
     $('#admin-games').innerHTML = state.games.length ? state.games.map(g => `<li class="game is-${g.state}">
       ${side(g, g.away, false)}
       <div class="mid"><span class="mid-main">${esc(g.state === 'upcoming' ? fmt.format(new Date(g.start)) : g.state === 'final' ? (g.winner ? g.winner + ' wins' : 'Final') : g.state === 'live' ? 'Live' : 'Postponed')}</span></div>
-      ${side(g, g.home, true)}</li>`).join('') : `<li class="empty">${state.gamesError ? 'Games couldn’t load.' : 'No NHL games on this Saturday yet. The NHL usually posts the schedule well ahead.'}</li>`;
+      ${side(g, g.home, true)}
+      <input class="why" type="text" maxlength="160" data-note="${esc(g.id)}" value="${esc(notes[g.id] || '')}" placeholder="Why this pick? (optional, one line)" aria-label="Georges’ reason for ${esc(g.away.abbr)} at ${esc(g.home.abbr)}"></li>`).join('') : `<li class="empty">${state.gamesError ? 'Games couldn’t load.' : 'No NHL games on this Saturday yet. The NHL usually posts the schedule well ahead.'}</li>`;
   }
 
   /* ---------- Flags ---------- */
@@ -163,11 +167,11 @@
     const shown = q ? list.filter(e => e.username.toLowerCase().includes(q)) : list;
     const allSel = shown.length > 0 && shown.every(e => selected.has(e.username));
     $('#grid-head').innerHTML = `<tr><th class="sel"><input type="checkbox" id="sel-all" aria-label="Select all shown players" ${allSel ? 'checked' : ''}></th><th class="rk">#</th><th class="who">Player</th>${games.map(g =>
-      `<th>${esc(g.away.abbr)}<small>at ${esc(g.home.abbr)}</small></th>`).join('')}<th>Pts</th><th>Prize</th><th>Last saved</th><th>Connection</th><th><span class="sr">Actions</span></th></tr>`;
+      `<th>${esc(g.away.abbr)}<small>at ${esc(g.home.abbr)}</small></th>`).join('')}<th>Pts</th><th>Prize</th><th>Last saved</th><th>Email</th><th>Connection</th><th><span class="sr">Actions</span></th></tr>`;
 
     const xs = games.reduce((n, g) => n + (g.winner && state.expert[g.id] === g.winner ? 1 : 0), 0);
     const georgesRow = Object.keys(state.expert).length
-      ? `<tr class="georges"><td class="sel"></td><td class="rk">–</td><td class="who">Georges Laraque</td>${games.map(g => cell(g, state.expert[g.id], true)).join('')}<td class="pts">${xs}</td><td></td><td></td><td></td><td></td></tr>`
+      ? `<tr class="georges"><td class="sel"></td><td class="rk">–</td><td class="who">Georges Laraque</td>${games.map(g => cell(g, state.expert[g.id], true)).join('')}<td class="pts">${xs}</td><td></td><td></td><td></td><td></td><td></td></tr>`
       : '';
     const rows = shown.map(e => `<tr class="${selected.has(e.username) ? 'is-sel' : ''}">
       <td class="sel"><input type="checkbox" class="pick-sel" data-user="${esc(e.username)}" aria-label="Select ${esc(e.username)}" ${selected.has(e.username) ? 'checked' : ''}></td>
@@ -177,16 +181,17 @@
       <td class="pts">${e.score}</td>
       <td class="prize">${esc(money(e.prize))}</td>
       <td class="when">${esc(when(e.updated || e.created))}</td>
+      <td class="email">${e.email ? `<a href="mailto:${esc(e.email)}">${esc(e.email)}</a>${e.optIn ? ' <span class="optin">opted in</span>' : ''}` : '<span class="muted">–</span>'}</td>
       ${netCell(e)}
       <td><button class="remove" type="button" data-user="${esc(e.username)}">Remove</button></td></tr>`).join('');
-    const cols = games.length + 8;
+    const cols = games.length + 9;
     $('#admin-rows').innerHTML = georgesRow + (rows || `<tr><td colspan="${cols}" class="board-empty">${state.entries.length ? 'No player matches that name.' : 'No entries yet.'}</td></tr>`);
 
     $('#grid-foot').innerHTML = state.entries.length ? `<tr><td></td><td></td><td class="who">Picked by</td>${games.map(g => {
       const a = state.entries.filter(e => e.picks && e.picks[g.id] === g.away.abbr).length;
       const h = state.entries.filter(e => e.picks && e.picks[g.id] === g.home.abbr).length;
       return `<td>${esc(g.away.abbr)} ${a}<br>${esc(g.home.abbr)} ${h}</td>`;
-    }).join('')}<td></td><td></td><td></td><td></td><td></td></tr>` : '';
+    }).join('')}<td></td><td></td><td></td><td></td><td></td><td></td></tr>` : '';
 
     $('#grid-count').textContent = `${state.entries.length} ${state.entries.length === 1 ? 'player' : 'players'}${q ? `, ${shown.length} shown` : ''}`;
     const btn = $('#remove-sel');
@@ -231,11 +236,11 @@
     if (!state) return;
     const games = state.games;
     const q = v => `"${String(v).replace(/"/g, '""')}"`;
-    const lines = [['Place', 'Player', ...games.map(g => `${g.away.abbr} at ${g.home.abbr}`), 'Points', 'Prize', 'Last saved', 'Connection'].map(q).join(',')];
-    lines.push(['', 'Georges Laraque', ...games.map(g => state.expert[g.id] || ''), '', '', '', ''].map(q).join(','));
-    lines.push(['', 'Winner', ...games.map(g => g.winner || ''), '', '', '', ''].map(q).join(','));
+    const lines = [['Place', 'Player', ...games.map(g => `${g.away.abbr} at ${g.home.abbr}`), 'Points', 'Prize', 'Last saved', 'Email', 'Opted in', 'Connection'].map(q).join(',')];
+    lines.push(['', 'Georges Laraque', ...games.map(g => state.expert[g.id] || ''), '', '', '', '', '', ''].map(q).join(','));
+    lines.push(['', 'Winner', ...games.map(g => g.winner || ''), '', '', '', '', '', ''].map(q).join(','));
     sortedEntries().forEach(e => {
-      lines.push([e.rank || '', e.username, ...games.map(g => (e.picks && e.picks[g.id]) || ''), e.score, e.prize ? e.prize.toFixed(2) : '', new Date(e.updated || e.created).toISOString(), e.net ? e.net.slice(0, 4) : ''].map(q).join(','));
+      lines.push([e.rank || '', e.username, ...games.map(g => (e.picks && e.picks[g.id]) || ''), e.score, e.prize ? e.prize.toFixed(2) : '', new Date(e.updated || e.created).toISOString(), e.email || '', e.optIn ? 'yes' : 'no', e.net ? e.net.slice(0, 4) : ''].map(q).join(','));
     });
     const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
@@ -260,6 +265,22 @@
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     } catch { say('#rows-status', 'The season table couldn’t load. Try again.', 'error'); }
   });
+  $('#csv-emails').addEventListener('click', async () => {
+    try {
+      const d = await api('contacts');
+      const q = v => `"${String(v).replace(/"/g, '""')}"`;
+      const iso = ms => ms ? new Date(ms).toISOString() : '';
+      const lines = [['Email', 'Usernames', 'Opted in to marketing', 'Opted in at', 'Opted out at', 'First entry', 'Last entry'].map(q).join(',')];
+      d.contacts.forEach(c => lines.push([c.email, (c.usernames || []).join(' '), c.optIn ? 'yes' : 'no', iso(c.optInAt), iso(c.optOutAt), iso(c.first), iso(c.last)].map(q).join(',')));
+      const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `emails-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      say('#rows-status', `Downloaded ${d.contacts.length} emails. Only send marketing to the ones marked “yes”.`, 'ok');
+    } catch (err) { say('#rows-status', err.message, 'error'); }
+  });
   $('#release-form').addEventListener('submit', async e => {
     e.preventDefault();
     const name = $('#release-name').value.trim();
@@ -281,6 +302,13 @@
   }
 
   $('#login').addEventListener('submit', e => { e.preventDefault(); pw = $('#pw').value; load(); });
+  $('#admin-games').addEventListener('input', e => {
+    const f = e.target.closest('input.why');
+    if (!f) return;
+    notes[f.dataset.note] = f.value;
+    say('#picks-status', 'Not saved yet.');
+  });
+  $('#intro').addEventListener('input', () => say('#picks-status', 'Not saved yet.'));
   $('#admin-games').addEventListener('click', e => {
     const b = e.target.closest('button.side');
     if (!b) return;
@@ -290,7 +318,7 @@
   });
   $('#save-picks').addEventListener('click', async () => {
     try {
-      const r = await api('picks', { picks });
+      const r = await api('picks', { picks, notes, intro: $('#intro').value });
       const live = state.date === state.current ? 'live on the site' : state.date > state.current ? 'saved for when this Saturday opens' : 'saved';
       say('#picks-status', `Saved. ${r.saved} of ${state.games.length} games picked and ${live}.`, 'ok');
       await load();

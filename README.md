@@ -83,3 +83,11 @@ Any Node host works. Settings:
 - Optional Render settings `SEASON_START` and `SEASON_END` (like `2026-11-14`) change the season dates without editing code.
 - **Usernames hold for the whole season:** each name belongs to the device that first used it. If a player gets a new phone, release their name in `/admin` under **Release a username**.
 - `/admin` has **Download season table (CSV)** for paying season prizes.
+
+## Emails
+- Email is required to enter (to contact winners) and is never shown on the public site. One entry per email each Saturday.
+- Marketing consent is a separate box, unticked by default. The date a player ticks or unticks it is saved.
+- `/admin` → **Download emails (CSV)** lists every email with consent status and dates. Only send reminders and offers to the "yes" rows, and include BetGRW's name, contact details and an unsubscribe link in every email (Canada's anti-spam law, CASL).
+
+## Georges' take
+- In `/admin`, above Georges' picks: a short intro for the week, plus an optional one-line reason under each game. They show on his card on the site.
