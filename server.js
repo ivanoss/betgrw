@@ -95,9 +95,32 @@ function putRecord(key, value) {
 }
 async function loadContest(date) {
   const c = await getRecord('contest-' + date, {});
-  return { expert: c.expert || {}, entries: Array.isArray(c.entries) ? c.entries : [] };
+  return { ...c, expert: c.expert || {}, entries: Array.isArray(c.entries) ? c.entries : [], okNets: Array.isArray(c.okNets) ? c.okNets : [] };
 }
-const saveContest = (date, contest) => putRecord('contest-' + date, contest);
+async function saveContest(date, contest) {
+  await putRecord('contest-' + date, contest);
+  const dates = await contestDates();
+  if (!dates.includes(date)) await putRecord('contest-index', [...dates, date].sort());
+}
+// Every Saturday that has a contest saved, oldest first.
+async function contestDates() {
+  const idx = await getRecord('contest-index', null);
+  if (Array.isArray(idx)) return idx;
+  const found = await discoverContests();
+  await putRecord('contest-index', found);
+  return found;
+}
+async function discoverContests() {
+  try {
+    if (useUpstash) {
+      const keys = await upstash(['KEYS', KEY_PREFIX + 'contest-????-??-??']);
+      return (keys || []).map(k => k.slice(-10)).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+    }
+    return (await fsp.readdir(DATA_DIR)).map(f => (f.match(/^contest-(\d{4}-\d{2}-\d{2})\.json$/) || [])[1]).filter(Boolean).sort();
+  } catch { return []; }
+}
+const isDate = d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d + 'T12:00:00Z'));
+const addDays = (d, n) => { const x = new Date(d + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
 
 /* ---------- Team logos ----------
    Official logo files, as listed by the NHL's own feed. Only NHL-hosted addresses are passed on.
@@ -269,6 +292,57 @@ function findByToken(contest, token) {
   return contest.entries.find(e => e.tokenHash === h) || null;
 }
 
+/* ---------- Past results ----------
+   Once every game of a Saturday is final, the results are saved with the contest
+   so they never change and never need the NHL feed again. */
+function publicGame(g) {
+  const t = x => ({ abbr: x.abbr, place: x.place, name: x.name, logo: x.logo, logoDark: x.logoDark });
+  return { id: g.id, start: g.start, state: g.state, away: t(g.away), home: t(g.home), winner: g.winner, endedIn: g.endedIn };
+}
+async function resultsFor(date) {
+  const contest = await loadContest(date);
+  if (contest.final) return contest.final;
+  const games = await getGames(date);
+  const play = playable(games);
+  const complete = play.length > 0 && play.every(g => g.state === 'final' && g.winner);
+  const lb = leaderboard(contest, games);
+  const snap = {
+    date, complete, players: contest.entries.length, graded: lb.graded, pool: lb.pool,
+    games: games.map(publicGame), expert: contest.expert,
+    rows: lb.rows.map(r => ({ name: r.name, score: r.score, rank: r.rank, prize: r.prize || 0, expert: !!r.expert }))
+  };
+  if (complete) { contest.final = { ...snap, savedAt: Date.now() }; await saveContest(date, contest); }
+  return snap;
+}
+function summarize(r) {
+  const fans = r.rows.filter(x => !x.expert);
+  const georges = r.rows.find(x => x.expert);
+  const top = fans.length ? fans[0].score : null;
+  return {
+    date: r.date, complete: r.complete, players: r.players, games: r.games.filter(g => g.state !== 'void').length,
+    winners: fans.filter(x => x.rank === 1).map(x => x.name), topScore: top,
+    georges: georges ? georges.score : null, beatGeorges: georges ? fans.filter(x => x.score > georges.score).length : 0
+  };
+}
+let resultsListCache = null;
+async function handleResultsList(res) {
+  if (resultsListCache && Date.now() - resultsListCache.at < 60e3) return send(res, 200, resultsListCache.body);
+  const current = await contestDate();
+  const past = (await contestDates()).filter(d => d < current).reverse();
+  const list = [];
+  for (const d of past.slice(0, 52)) {
+    try { list.push(summarize(await resultsFor(d))); } catch { list.push({ date: d, unavailable: true }); }
+  }
+  const body = { current, saturdays: list };
+  resultsListCache = { at: Date.now(), body };
+  send(res, 200, body);
+}
+async function handleResultsDay(res, date) {
+  if (!isDate(date) || !(await contestDates()).includes(date)) return send(res, 404, { error: 'No contest on that date.' });
+  const r = await resultsFor(date);
+  send(res, 200, { ...r, summary: summarize(r) });
+}
+
 /* ---------- HTTP helpers ---------- */
 function send(res, status, body, headers = {}) {
   const isObj = typeof body === 'object' && !Buffer.isBuffer(body);
@@ -356,6 +430,8 @@ async function handleEntry(req, res, ip) {
   if (isLocked(games)) return send(res, 403, { error: 'Picks locked at the first puck drop.' });
 
   if (body.website) return send(res, 400, { error: 'Your picks weren’t saved. Try again.' }); // hidden trap field, only bots fill it in
+  const blocked = await getRecord('blocked', {});
+  if (blocked[networkId(ip)]) return send(res, 403, { error: 'Entries from this internet connection aren’t accepted. Contact BetGRW support if you think this is a mistake.' });
 
   const username = String(body.username || '').trim();
   if (!/^[A-Za-z0-9_.\-]{3,20}$/.test(username)) return send(res, 400, { error: 'Usernames are 3 to 20 letters, numbers, dots, dashes or underscores.' });
@@ -388,27 +464,41 @@ async function handleEntry(req, res, ip) {
   send(res, 200, { ok: true, username, token, updated: !!mine });
 }
 
-async function handleAdmin(req, res, route) {
+async function handleAdmin(req, res, route, url) {
   if (!ADMIN_PASSWORD) return send(res, 503, { error: 'Set ADMIN_PASSWORD on the server to turn on the admin page.' });
   if (!isAdmin(req)) return send(res, 401, { error: 'Wrong password.' });
-  const date = await contestDate();
+  const current = await contestDate();
+  // Admin can work on any Saturday: the one on the site, past ones, or upcoming ones (to enter Georges' picks early)
+  const asked = url.searchParams.get('date');
+  const date = asked && isDate(asked) && new Date(asked + 'T12:00:00Z').getUTCDay() === 6 ? asked : current;
 
   if (route === 'state' && req.method === 'GET') {
-    const games = await getGames(date);
+    let games = [];
+    let gamesError = null;
+    try { games = await getGames(date); } catch { gamesError = 'The NHL schedule for this Saturday couldn’t load. Try again in a minute.'; }
     const contest = await loadContest(date);
     const settings = await getRecord('settings', {});
+    const blocked = await getRecord('blocked', {});
+    const known = await contestDates();
+    const upcoming = [current, addDays(current, 7), addDays(current, 14)];
+    const saturdays = [...new Set([...upcoming, ...known])].sort().reverse();
+    const lb = leaderboard(contest, games).rows.filter(r => !r.expert);
+    const byName = new Map(lb.map(r => [r.name, r]));
     return send(res, 200, {
-      date, override: settings.contestDate || null, locked: isLocked(games), games, expert: contest.expert,
+      date, current, saturdays, gamesError,
+      override: settings.contestDate || null, locked: isLocked(games), games, expert: contest.expert,
       prizes: PRIZES, pool: PRIZE_POOL, maxPerNetwork: MAX_PER_NETWORK,
-      entries: (() => {
-        const lb = leaderboard(contest, games).rows.filter(r => !r.expert);
-        const byName = new Map(lb.map(r => [r.name, r]));
-        return contest.entries.map(e => ({ username: e.username, created: e.created, updated: e.updated, picks: e.picks, net: e.net || '', score: scorePicks(e.picks, games), rank: byName.get(e.username)?.rank, prize: byName.get(e.username)?.prize || 0 }));
-      })()
+      okNets: contest.okNets, blocked,
+      entries: contest.entries.map(e => ({
+        username: e.username, created: e.created, updated: e.updated, picks: e.picks, net: e.net || '',
+        score: scorePicks(e.picks, games), rank: byName.get(e.username)?.rank, prize: byName.get(e.username)?.prize || 0
+      }))
     });
   }
   if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' });
   const body = await readBody(req);
+  const validNet = n => typeof n === 'string' && /^[0-9a-f]{10}$/.test(n);
+  resultsListCache = null;
 
   if (route === 'picks') {
     const games = await getGames(date);
@@ -419,28 +509,58 @@ async function handleAdmin(req, res, route) {
       if (p === g.away.abbr || p === g.home.abbr) expert[g.id] = p;
     }
     contest.expert = expert;
+    delete contest.final; // recompute saved results with the new picks
     await saveContest(date, contest);
     return send(res, 200, { ok: true, saved: Object.keys(expert).length });
   }
-  if (route === 'remove-entry') {
+  if (route === 'remove-entry' || route === 'remove-many') {
+    const names = new Set((route === 'remove-many' ? (Array.isArray(body.usernames) ? body.usernames : []) : [body.username])
+      .map(n => String(n || '').toLowerCase()).filter(Boolean));
     const contest = await loadContest(date);
     const before = contest.entries.length;
-    contest.entries = contest.entries.filter(e => e.username.toLowerCase() !== String(body.username || '').toLowerCase());
+    contest.entries = contest.entries.filter(e => !names.has(e.username.toLowerCase()));
+    delete contest.final;
     await saveContest(date, contest);
     return send(res, 200, { ok: true, removed: before - contest.entries.length });
   }
   if (route === 'remove-network') {
-    const net = String(body.net || '');
-    if (!/^[0-9a-f]{10}$/.test(net)) return send(res, 400, { error: 'Unknown connection.' });
+    if (!validNet(body.net)) return send(res, 400, { error: 'Unknown connection.' });
     const contest = await loadContest(date);
     const before = contest.entries.length;
-    contest.entries = contest.entries.filter(e => e.net !== net);
+    contest.entries = contest.entries.filter(e => e.net !== body.net);
+    delete contest.final;
     await saveContest(date, contest);
     return send(res, 200, { ok: true, removed: before - contest.entries.length });
   }
+  if (route === 'mark-ok') { // e.g. a family sharing Wi-Fi: stop flagging this connection for this Saturday
+    if (!validNet(body.net)) return send(res, 400, { error: 'Unknown connection.' });
+    const contest = await loadContest(date);
+    contest.okNets = body.ok === false ? contest.okNets.filter(n => n !== body.net) : [...new Set([...contest.okNets, body.net])];
+    await saveContest(date, contest);
+    return send(res, 200, { ok: true });
+  }
+  if (route === 'block' || route === 'unblock') {
+    if (!validNet(body.net)) return send(res, 400, { error: 'Unknown connection.' });
+    const blocked = await getRecord('blocked', {});
+    let removed = 0;
+    if (route === 'block') {
+      const contest = await loadContest(date);
+      const names = contest.entries.filter(e => e.net === body.net).map(e => e.username);
+      blocked[body.net] = { at: Date.now(), names: names.slice(0, 20) };
+      if (body.removeEntries) {
+        const before = contest.entries.length;
+        contest.entries = contest.entries.filter(e => e.net !== body.net);
+        removed = before - contest.entries.length;
+        delete contest.final;
+        await saveContest(date, contest);
+      }
+    } else delete blocked[body.net];
+    await putRecord('blocked', blocked);
+    return send(res, 200, { ok: true, removed });
+  }
   if (route === 'settings') {
     const d = body.contestDate;
-    if (d && !/^\d{4}-\d{2}-\d{2}$/.test(d)) return send(res, 400, { error: 'Use a date like 2026-11-14.' });
+    if (d && !isDate(d)) return send(res, 400, { error: 'Use a date like 2026-11-14.' });
     await putRecord('settings', { contestDate: d || null });
     return send(res, 200, { ok: true });
   }
@@ -450,6 +570,7 @@ async function handleAdmin(req, res, route) {
 async function serveStatic(req, res, pathname) {
   if (pathname === '/') pathname = '/index.html';
   if (pathname === '/admin') pathname = '/admin.html';
+  if (pathname === '/results') pathname = '/results.html';
   const file = path.normalize(path.join(PUBLIC_DIR, pathname));
   if (!file.startsWith(PUBLIC_DIR + path.sep)) return send(res, 404, 'Not found');
   try {
@@ -473,7 +594,9 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/state' && req.method === 'GET') return await handleState(req, res);
     if (url.pathname === '/api/entry' && req.method === 'POST') return await handleEntry(req, res, ip);
     if (url.pathname === '/api/standings' && req.method === 'GET') return send(res, 200, { teams: await getStandings() });
-    if (url.pathname.startsWith('/api/admin/')) return await handleAdmin(req, res, url.pathname.slice(11));
+    if (url.pathname === '/api/results' && req.method === 'GET') return await handleResultsList(res);
+    if (url.pathname.startsWith('/api/results/') && req.method === 'GET') return await handleResultsDay(res, url.pathname.slice(13));
+    if (url.pathname.startsWith('/api/admin/')) return await handleAdmin(req, res, url.pathname.slice(11), url);
     if (url.pathname.startsWith('/api/')) return send(res, 404, { error: 'Not found' });
     if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'Method not allowed');
     return await serveStatic(req, res, url.pathname);

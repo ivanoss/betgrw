@@ -65,3 +65,13 @@ Any Node host works. Settings:
 - A hidden form field catches simple bots, and repeated tries are slowed down.
 - In `/admin`, entries from the same connection are highlighted in orange with a **Remove all** button. Connections are stored as short anonymous codes, never as addresses.
 - The deposit rule is the final check: before paying a prize, confirm the winner's betgrw.com account. Fake usernames won't have deposits.
+
+## Admin page (`/admin`)
+- **Saturday picker:** switch between the Saturday on the site, the next two Saturdays, and past ones. Enter Georges' picks for an upcoming Saturday early; they appear when it opens on Tuesday.
+- **Flags:** connections with more than one entry. **Mark OK** (a family on one Wi-Fi), **Remove all**, or **Remove and block** (that connection can't enter again until you unblock it).
+- **Players' picks:** tick players and use **Remove selected** to remove many at once.
+
+## Past results (`/results`)
+- Every finished Saturday with its winners, top score, Georges' score and number of players.
+- Click a Saturday for the final standings with prizes, and every game's winner next to Georges' pick.
+- Once all of a Saturday's games are final, its results are saved permanently, so they never change, even if the NHL feed does.

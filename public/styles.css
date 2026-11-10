@@ -328,6 +328,46 @@ tr.gap td { padding: 0 var(--pad); color: var(--ink-3); line-height: 1.2; }
 .feed-list .what { color: var(--ink-2); }
 .feed-list .empty { padding: 10px 0 12px; display: block; }
 
+/* ---------- Past results page ---------- */
+.page.single { grid-template-columns: minmax(0, 1fr); }
+.res-hub { grid-template-columns: auto minmax(0, 1fr); }
+.res-hub .hub-facts { grid-template-columns: repeat(4, minmax(0, auto)); }
+.res-back { margin: 0; font-size: 14px; }
+.res-back a { color: var(--accent); font-weight: 500; text-decoration: none; }
+.res-back a::before { content: '‹'; margin-right: 6px; font-size: 18px; line-height: 0; }
+.res-back a:hover { text-decoration: underline; }
+.rtable-wrap { overflow-x: auto; }
+.rtable { width: 100%; border-collapse: collapse; font-size: 14px; }
+.rtable th { text-align: left; font-size: 12px; font-weight: 500; color: var(--ink-2); padding: 7px var(--pad); background: #F0F2F5; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); white-space: nowrap; }
+.rtable td { padding: 11px var(--pad); border-bottom: 1px solid var(--line); }
+.rtable th.num, .rtable td.num { text-align: right; }
+.rtable tbody tr { cursor: pointer; }
+.rtable tbody tr:hover td { background: #F6F8FB; }
+.rtable .rdate a { color: var(--accent); font-weight: 700; text-decoration: none; white-space: nowrap; }
+.rtable .rwin { font-weight: 500; }
+.rtable .rnum { font: 700 16px/1 var(--num); }
+.rtable .rnum small { font: 500 12px var(--text); color: var(--ink-3); margin-left: 1px; }
+.muted { color: var(--ink-2); }
+.tag { display: inline-block; font-size: 11px; font-weight: 700; color: var(--red); background: var(--red-bg); border-radius: 3px; padding: 1px 6px; margin-left: 6px; }
+.res-detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.glist { list-style: none; margin: 0; padding: 0; }
+.grow { display: grid; grid-template-columns: 72px minmax(0, 1fr) 60px; gap: 12px; align-items: center; padding: 9px var(--pad); border-top: 1px solid var(--line); }
+.grow.is-void { opacity: .5; }
+.gend { font-size: 12px; color: var(--ink-2); }
+.gteams { display: grid; gap: 3px; min-width: 0; }
+.gteam { display: flex; align-items: center; gap: 8px; font-size: 14px; min-width: 0; }
+.gteam > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gteam .tlogo { width: 22px; height: 22px; }
+.gteam.won { font-weight: 700; }
+.gteam.won::after { content: '✓'; color: var(--green); font-weight: 700; }
+.gteam.lost { color: var(--ink-3); }
+.gteam.lost .tlogo { opacity: .45; }
+.gl-col { text-align: center; }
+.gl-pick { display: inline-block; font: 700 13px/1 var(--num); padding: 6px 8px; border-radius: 4px; background: var(--nav); color: var(--accent-hi); }
+.gl-pick.hit { background: var(--green); color: #fff; }
+.gl-pick.miss { background: var(--bg); color: var(--ink-3); text-decoration: line-through; }
+.gl-none { color: var(--ink-3); }
+
 /* ---------- Footer ---------- */
 .foot { background: var(--nav); color: #95A3C6; font-size: 12px; }
 .foot-in { padding-top: 18px; padding-bottom: calc(18px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
@@ -336,6 +376,7 @@ tr.gap td { padding: 0 var(--pad); color: var(--ink-3); line-height: 1.2; }
 
 /* ---------- Tablet ---------- */
 @media (max-width: 980px) {
+  .res-detail { grid-template-columns: 1fr; }
   .prize-top { grid-template-columns: auto minmax(0, 1fr); }
   .prize-cta { grid-column: 1 / -1; }
   .payouts { grid-template-columns: repeat(5, minmax(0, 1fr)); }
@@ -353,6 +394,11 @@ tr.gap td { padding: 0 var(--pad); color: var(--ink-3); line-height: 1.2; }
 /* ---------- Phone ---------- */
 @media (max-width: 680px) {
   :root { --hdr: 96px; --pad: 14px; }
+  .rtable th:nth-child(5), .rtable td:nth-child(5) { display: none; }
+  .res-hub .hub-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .res-hub .hub-facts div:nth-child(3) { border-left: 0; padding-left: 0; }
+  .rtable td, .rtable th { padding-left: 10px; padding-right: 10px; }
+  .gteam .city { display: none; }
   .prize { padding: 16px var(--pad); gap: 12px; display: flex; flex-direction: column; }
   .prize-top { display: contents; }
   .prize-amount { order: 1; }

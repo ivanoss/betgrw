@@ -325,3 +325,41 @@ tr.is-me { background: #E3ECFB; }
 .grid .net-n { font-weight: 700; }
 .grid .remove-net { margin-left: 6px; background: none; border: 1px solid #C26A00; color: #8A4B00; border-radius: 4px; padding: 3px 8px; font-size: 12px; font-weight: 600; }
 .grid .remove-net:hover { background: #C26A00; color: #fff; }
+
+/* ---------- Admin: Saturday picker, flags, bulk remove ---------- */
+.admin-links { display: flex; gap: 18px; }
+.satbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; background: #fff; border: 1px solid var(--boards); border-radius: 6px; padding: 14px 16px; margin: 0 0 28px; }
+.satbar label { font-weight: 700; }
+.satbar select { font: inherit; font-size: 16px; font-weight: 600; padding: 8px 10px; border: 2px solid var(--ink); border-radius: 4px; background: #fff; min-width: 260px; }
+.sat-tag { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 3px; }
+.sat-tag.now { background: #DDF5E7; color: var(--green); }
+.sat-tag.next { background: #E3ECFB; color: var(--blue); }
+.sat-tag.past { background: var(--ice-2); color: var(--ink-2); }
+.sat-note { flex-basis: 100%; margin: 0; font-size: 14px; color: var(--ink-2); }
+.flag { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; background: #FFF4E5; border: 1px solid #F2C891; border-radius: 6px; padding: 12px 14px; margin-bottom: 8px; }
+.flag-main { font-size: 14px; }
+.flag-main .net-id { margin-right: 8px; }
+.flag-names { color: var(--ink-2); }
+.flag-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.fbtn { background: #fff; border: 1px solid var(--boards); color: var(--ink); border-radius: 4px; padding: 6px 12px; font-size: 13px; font-weight: 600; }
+.fbtn:hover { border-color: var(--ink); }
+.fbtn.ok { color: var(--green); border-color: #9BD3B4; }
+.fbtn.danger { color: var(--red); border-color: #EBA3AE; }
+.fbtn.danger:hover { background: var(--red); color: #fff; border-color: var(--red); }
+.flag-empty { margin: 0 0 8px; color: var(--ink-2); font-size: 14px; }
+.flag-oklist { margin: 8px 0 0; font-size: 13px; color: var(--ink-2); }
+.linkbtn { background: none; border: 0; padding: 0 2px; color: var(--blue); font-weight: 600; text-decoration: underline; font-size: 13px; }
+.sub-h { margin: 22px 0 8px; font-size: 16px; }
+.blocked-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.blocked-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 14px; background: #fff; border: 1px solid var(--boards); border-radius: 6px; padding: 8px 12px; }
+.net-id { font-weight: 700; letter-spacing: .5px; font-size: 12px; background: var(--ice-2); color: var(--ink); padding: 2px 6px; border-radius: 3px; }
+.remove-sel { background: #fff; border: 1px solid var(--red); color: var(--red); border-radius: 4px; padding: 7px 12px; font-weight: 600; }
+.remove-sel:hover:not(:disabled) { background: var(--red); color: #fff; }
+.remove-sel:disabled { border-color: var(--boards); color: var(--ink-2); cursor: default; }
+.grid .sel { width: 36px; text-align: center; }
+.grid .sel input { width: 17px; height: 17px; }
+.grid tr.is-sel td { background: #FFF8E6; }
+.grid td.net.okd { background: #F2F7F3; color: var(--green); }
+.advanced { margin-top: 40px; padding: 16px 0; border-top: 2px solid var(--ink); }
+.advanced summary { font-weight: 700; font-size: 16px; cursor: pointer; }
+.advanced .date-form { margin-top: 12px; }

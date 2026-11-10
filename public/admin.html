@@ -14,7 +14,7 @@
 <body>
 <header class="top">
   <a class="brand" href="/"><img src="logo.png" alt="BetGRW" width="124" height="30"></a>
-  <a href="/" class="back">View the site</a>
+  <nav class="admin-links"><a href="/results" class="back">Past results</a><a href="/" class="back">View the site</a></nav>
 </header>
 <main>
   <h1 class="admin-h">Admin</h1>
@@ -27,6 +27,13 @@
   </form>
 
   <div id="panel" hidden>
+    <section class="satbar" aria-label="Choose a Saturday">
+      <label for="sat">Saturday</label>
+      <select id="sat"></select>
+      <span class="sat-tag" id="sat-tag"></span>
+      <p class="sat-note" id="sat-note"></p>
+    </section>
+
     <section class="block">
       <div class="block-head">
         <h2>Georges’ picks</h2>
@@ -41,6 +48,19 @@
 
     <div class="line blue" aria-hidden="true"></div>
 
+    <section class="block" id="flags-block">
+      <div class="block-head">
+        <h2>Flags</h2>
+        <p class="block-sub">Connections with more than one entry this Saturday. Mark a family as OK, remove the entries, or block the connection from entering again.</p>
+      </div>
+      <div id="flags"></div>
+      <h3 class="sub-h">Blocked connections</h3>
+      <div id="blocked"></div>
+      <p class="status" id="flags-status" role="status"></p>
+    </section>
+
+    <div class="line blue" aria-hidden="true"></div>
+
     <section class="block">
       <div class="block-head">
         <h2>Players’ picks</h2>
@@ -50,6 +70,7 @@
         <label for="find" class="sr">Find a player</label>
         <input id="find" type="search" placeholder="Find a player" autocomplete="off">
         <span class="grid-count" id="grid-count"></span>
+        <button class="remove-sel" id="remove-sel" type="button" disabled>Remove selected</button>
         <button class="text-btn" id="csv" type="button">Download as spreadsheet (CSV)</button>
       </div>
       <div class="grid-wrap">
@@ -65,19 +86,17 @@
 
     <div class="line blue" aria-hidden="true"></div>
 
-    <section class="block">
-      <div class="block-head">
-        <h2>Contest date</h2>
-        <p class="block-sub">The site runs on Saturday games automatically. Last Saturday’s results stay up until Tuesday 6 AM Eastern, then the next Saturday opens. Set a date only to run a different day.</p>
-      </div>
+    <details class="block advanced">
+      <summary>Advanced: run a different day on the site</summary>
+      <p class="block-sub">The site picks the Saturday on its own: last Saturday’s results stay up until Tuesday 6 AM Eastern, then the next Saturday opens. Only set a date here to put a different day on the public site.</p>
       <form id="date-form" class="date-form">
-        <label for="date">Slate date</label>
+        <label for="date">Date on the site</label>
         <input id="date" type="date">
         <button class="submit" type="submit">Use this date</button>
         <button class="text-btn" id="date-auto" type="button">Go back to automatic</button>
       </form>
       <p class="status" id="date-status" role="status"></p>
-    </section>
+    </details>
   </div>
 </main>
 <script src="teams.js?v=__V__"></script>
