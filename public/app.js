@@ -115,7 +115,7 @@
     el.innerHTML = data.games.map(g => {
       const team = t => {
         const cls = g.winner ? (g.winner === t.abbr ? 'won' : 'lost') : '';
-        return `<span class="chip-team ${cls}">${logo(t, true)}${esc(t.abbr)}</span>`;
+        return `<span class="chip-team ${cls}">${logo(t)}${esc(t.abbr)}</span>`;
       };
       return `<li class="chip is-${g.state}"><span class="chip-status">${esc(statusText(g))}</span>${team(g.away)}${team(g.home)}</li>`;
     }).join('');

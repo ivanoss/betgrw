@@ -45,7 +45,7 @@ h1, h2 { margin: 0; }
   position: fixed; top: 0; left: 0; right: 0; z-index: 40; height: var(--hdr);
   background: var(--nav); color: #fff;
   border-bottom: 1px solid #1E2B52;
-  box-shadow: 0 1px 0 rgba(255,255,255,.03), 0 6px 18px rgba(4, 10, 30, .28);
+  box-shadow: 0 2px 8px rgba(4, 10, 30, .18);
 }
 .hdr::after { /* thin BetGRW-blue line along the bottom */
   content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
@@ -94,17 +94,17 @@ h1, h2 { margin: 0; }
 .hdr-cta:hover { background: #1A55E8; }
 
 /* ---------- Match strip ---------- */
-.strip-bar { background: var(--nav-2); border-top: 1px solid #1E2B52; }
-.strip { list-style: none; margin: 0; padding: 8px 0; display: flex; gap: 1px; overflow-x: auto; scrollbar-width: thin; scrollbar-color: #2A3A68 transparent; }
-.chip { flex: none; width: 118px; padding: 6px 10px; display: grid; gap: 2px; font-size: 12px; color: #DCE3F5; border-left: 1px solid #22305C; }
-.chip:first-child { border-left: 0; padding-left: 0; }
-.chip-status { font-size: 11px; color: #8E9CC4; display: flex; align-items: center; gap: 5px; }
-.chip.is-live .chip-status { color: #FF7A86; font-weight: 700; }
+.strip-bar { background: var(--bg); border-bottom: 1px solid var(--line); }
+.strip { list-style: none; margin: 0; padding: 10px 0; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: thin; scrollbar-color: var(--line-2) transparent; }
+.chip { flex: none; width: 124px; padding: 7px 10px; display: grid; gap: 3px; font-size: 13px; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 6px; }
+.chip-status { font-size: 11px; color: var(--ink-2); display: flex; align-items: center; gap: 5px; }
+.chip.is-live { border-color: #F3C2C8; background: #FFF6F7; }
+.chip.is-live .chip-status { color: var(--red); font-weight: 700; }
 .chip.is-live .chip-status::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--red); animation: pulse 1.4s infinite; }
 .chip-team { display: flex; align-items: center; gap: 6px; font-weight: 500; }
-.chip-team.lost { color: #6E7BA0; }
-.chip-team.won { color: #fff; font-weight: 700; }
-.chip-team.won::after { content: '✓'; margin-left: auto; color: var(--accent-hi); }
+.chip-team.lost { color: var(--ink-3); }
+.chip-team.won { font-weight: 700; }
+.chip-team.won::after { content: '✓'; margin-left: auto; color: var(--green); font-weight: 700; }
 .dot { width: 9px; height: 9px; border-radius: 2px; flex: none; background: var(--c); box-shadow: inset 0 -3px 0 var(--t); }
 .tlogo { flex: none; display: block; width: 22px; height: 22px; object-fit: contain; }
 .chip .tlogo { width: 18px; height: 18px; }
@@ -117,7 +117,7 @@ h1, h2 { margin: 0; }
 .hub { background: var(--card); border-bottom: 1px solid var(--line); }
 .hub-in { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 28px; padding: 20px 16px 16px; }
 .hub-id { display: flex; align-items: center; gap: 14px; }
-.hub-badge { flex: none; width: 52px; height: 52px; border-radius: 6px; background: var(--accent); color: #fff; display: grid; place-items: center; font: 700 20px/1 var(--num); }
+.hub-badge { flex: none; display: block; width: 56px; height: 56px; border-radius: 10px; }
 h1 { font: 900 28px/1.1 var(--text); letter-spacing: -.5px; white-space: nowrap; }
 .hub-meta { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; }
 .hub-facts { margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, auto)); justify-content: start; align-self: stretch; }
@@ -137,25 +137,24 @@ h1 { font: 900 28px/1.1 var(--text); letter-spacing: -.5px; white-space: nowrap;
 
 /* ---------- Prize ---------- */
 .prize {
-  margin-top: 14px; display: grid; grid-template-columns: 200px minmax(0, 1fr) auto; align-items: stretch;
-  background: linear-gradient(100deg, var(--accent) 0%, #1449D6 60%, #1A55E8 100%); color: #fff; border-radius: 6px; overflow: hidden;
+  margin-top: 14px; padding: 18px var(--pad); border-radius: 6px; color: #fff;
+  background: linear-gradient(100deg, #0A39B5 0%, var(--accent) 50%, #1650E0 100%);
+  display: grid; gap: 14px;
 }
-.prize-amount { display: flex; flex-direction: column; justify-content: center; padding: 16px var(--pad); background: rgba(4, 18, 60, .35); border-right: 1px solid rgba(255,255,255,.12); }
-.prize-num { font: 700 46px/1 var(--num); letter-spacing: -1px; }
-.prize-sub { margin-top: 4px; font-size: 13px; font-weight: 500; color: #B9CCFF; }
-.prize-copy { min-width: 0; padding: 16px var(--pad); }
+.prize-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 20px; }
+.prize-amount { display: flex; align-items: baseline; gap: 8px; padding-right: 20px; border-right: 1px solid rgba(255,255,255,.2); }
+.prize-num { font: 700 44px/1 var(--num); letter-spacing: -1px; }
+.prize-sub { font-size: 13px; font-weight: 500; color: #C9D7FF; }
 .prize-head { margin: 0; font: 900 20px/1.2 var(--text); letter-spacing: -.3px; color: #fff; }
-.payouts { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; }
-.payouts li { display: grid; justify-items: center; gap: 1px; padding: 6px 2px 5px; border-radius: 4px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.14); }
-.payouts span { font-size: 11px; color: #C9D7FF; }
-.payouts b { font: 700 16px/1.1 var(--num); }
-.payouts li:first-child { background: #fff; border-color: #fff; color: var(--accent); }
-.payouts li:first-child span { color: var(--accent); }
-.prize-rule { margin: 12px 0 0; display: flex; align-items: flex-start; gap: 8px; font-size: 13px; line-height: 1.4; color: #E6EDFF; }
+.payouts { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 8px; }
+.payouts li { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; height: 58px; border-radius: 6px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); }
+.payouts span { font-size: 12px; color: #C9D7FF; }
+.payouts b { font: 700 19px/1 var(--num); }
+.prize-rule { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.4; color: #E6EDFF; }
 .prize-rule b { color: #fff; font-weight: 700; }
-.prize-icon { flex: none; width: 16px; height: 16px; margin-top: 1px; color: #fff; }
+.prize-icon { flex: none; width: 16px; height: 16px; color: #fff; }
 .prize-cta {
-  align-self: center; margin-right: var(--pad); background: #fff; color: var(--accent); text-decoration: none; font-weight: 700; font-size: 15px;
+  background: #fff; color: var(--accent); text-decoration: none; font-weight: 700; font-size: 15px; text-align: center;
   border-radius: 4px; padding: 12px 18px; white-space: nowrap; box-shadow: 0 2px 0 rgba(0,0,0,.15);
 }
 .prize-cta:hover { background: var(--accent-soft); }
@@ -332,10 +331,11 @@ tr.gap td { padding: 0 var(--pad); color: var(--ink-3); line-height: 1.2; }
 
 /* ---------- Tablet ---------- */
 @media (max-width: 980px) {
+  .prize-top { grid-template-columns: auto minmax(0, 1fr); }
+  .prize-cta { grid-column: 1 / -1; }
+  .payouts { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   .hub-in { grid-template-columns: auto minmax(0, 1fr); }
   .hub-duel { grid-column: 1 / -1; justify-self: start; }
-  .prize { grid-template-columns: 170px minmax(0, 1fr); }
-  .prize-cta { grid-column: 1 / -1; justify-self: start; margin: 0 var(--pad) var(--pad); }
   .hdr-pill { display: none; }
   .hdr-in { gap: 18px; }
   .hnav a { padding: 0 9px; }
@@ -348,8 +348,22 @@ tr.gap td { padding: 0 var(--pad); color: var(--ink-3); line-height: 1.2; }
 /* ---------- Phone ---------- */
 @media (max-width: 680px) {
   :root { --hdr: 96px; --pad: 14px; }
-  .hub-in { grid-template-columns: 1fr; gap: 14px; padding: 16px 10px 12px; }
-  .hub-badge { width: 44px; height: 44px; font-size: 17px; }
+  .prize { padding: 16px var(--pad); gap: 12px; display: flex; flex-direction: column; }
+  .prize-top { display: contents; }
+  .prize-amount { order: 1; }
+  .prize-head { order: 2; margin-top: -6px; }
+  .payouts { order: 3; }
+  .prize-rule { order: 4; }
+  .prize-amount { padding: 0; border: 0; }
+  .prize-num { font-size: 38px; }
+  .prize-head { font-size: 18px; }
+  .prize-cta { order: 5; }
+  .payouts { gap: 6px; }
+  .payouts li { height: 52px; }
+  .payouts b { font-size: 17px; }
+  .prize-rule { align-items: flex-start; }
+  .hub-in { grid-template-columns: 1fr; gap: 14px; padding: 20px 10px 12px; }
+  .hub-badge { width: 48px; height: 48px; }
   h1 { font-size: 24px; }
   .hub-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
   .hub-facts div { padding: 8px 10px; }
@@ -357,13 +371,6 @@ tr.gap td { padding: 0 var(--pad); color: var(--ink-3); line-height: 1.2; }
   .hub-facts dd { font-size: 14px; white-space: normal; }
   .hub-duel { justify-self: stretch; justify-content: center; }
   .hub-status { border-top: 0; padding-top: 0; }
-  .prize { grid-template-columns: 1fr; }
-  .prize-amount { flex-direction: row; justify-content: flex-start; align-items: baseline; gap: 10px; border-right: 0; border-bottom: 1px solid rgba(255,255,255,.12); padding: 12px var(--pad); }
-  .prize-num { font-size: 38px; }
-  .prize-copy { padding: 12px var(--pad) 0; }
-  .prize-head { font-size: 18px; }
-  .payouts { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-  .prize-cta { justify-self: stretch; margin: 12px var(--pad) var(--pad); text-align: center; }
   .xlist { grid-template-columns: 1fr; }
   .name-row { grid-template-columns: 1fr; }
   .day-head { grid-template-columns: minmax(0, 1fr) 132px 56px; padding-top: 7px; padding-bottom: 7px; }
