@@ -27,6 +27,8 @@
     return 'on ' + wdFmt.format(d);
   };
 
+  const GEORGES_PHOTO = 'georges.jpg';
+
   /* ---------- Data ---------- */
   async function load() {
     try {
@@ -72,6 +74,21 @@
     const i = info(t);
     return `<img class="tlogo" src="${esc(src)}" alt="" width="24" height="24" loading="lazy" decoding="async" data-c="${esc(i.color)}" data-t="${esc(i.trim)}">`;
   };
+  const PERSON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4.2" fill="currentColor"/><path d="M3.5 21c.9-4.4 4.3-6.8 8.5-6.8s7.6 2.4 8.5 6.8" fill="currentColor"/></svg>';
+  document.addEventListener('error', e => {
+    const im = e.target;
+    if (!(im instanceof HTMLImageElement) || !im.classList.contains('gphoto')) return;
+    const d = document.createElement('span');
+    d.className = im.className + ' gphoto-fb';
+    d.setAttribute('role', 'img');
+    d.setAttribute('aria-label', im.alt || 'Georges Laraque');
+    d.innerHTML = PERSON;
+    im.replaceWith(d);
+  }, true);
+  // Photos that already failed before this script ran
+  document.querySelectorAll('img.gphoto').forEach(im => {
+    if (im.complete && im.naturalWidth === 0) im.dispatchEvent(new Event('error'));
+  });
   document.addEventListener('error', e => {
     const img = e.target;
     if (!(img instanceof HTMLImageElement) || !img.classList.contains('tlogo')) return;
@@ -324,8 +341,8 @@
     const showPrize = graded > 0;
     $('#board').classList.toggle('with-prize', showPrize);
     const row = r => `<tr class="${r.expert ? 'is-georges' : ''} ${isMe(r) ? 'is-me' : ''} ${r.rank === 1 && graded ? 'top' : ''}">
-      <td class="place">${r.expert ? 'GL' : r.rank}</td>
-      <td class="player">${esc(r.name)}${isMe(r) ? '<span class="mark me">You</span>' : ''}${!r.expert && g && graded && r.score > g.score ? '<span class="mark beat">Beat Georges</span>' : ''}</td>
+      <td class="place">${r.expert ? '–' : r.rank}</td>
+      <td class="player">${r.expert ? `<span class="gname"><img class="gphoto xs" src="${GEORGES_PHOTO}" alt="" width="22" height="22">${esc(r.name)}</span>` : esc(r.name)}${isMe(r) ? '<span class="mark me">You</span>' : ''}${!r.expert && g && graded && r.score > g.score ? '<span class="mark beat">Beat Georges</span>' : ''}</td>
       <td class="pts">${r.score}</td>
       <td class="num prize-col">${!r.expert && r.prize ? money(r.prize) : ''}</td></tr>`;
     let html = '';
@@ -435,7 +452,7 @@
     const wide = window.matchMedia('(min-width: 981px)').matches;
     // On wide screens the leaderboard and standings sit beside the main column, so only the main column is tracked.
     const ids = wide ? ['georges', 'picks', 'rules'] : ['georges', 'picks', 'rules', 'board', 'nhl'];
-    const line = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--hdr'), 10) + 90;
+    const line = 110;
     let current = ids[0];
     for (const id of ids) {
       const el = document.getElementById(id);
