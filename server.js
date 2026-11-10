@@ -242,6 +242,8 @@ async function handleState(req, res) {
   send(res, 200, {
     date, now: Date.now(), lockAt: lockTime(games), locked,
     games, expert, split,
+    recent: [...contest.entries].sort((a, b) => (b.updated || 0) - (a.updated || 0)).slice(0, 8)
+      .map(e => ({ name: e.username, at: e.updated || e.created, edited: (e.updated || 0) - (e.created || 0) > 1000 })),
     me: me ? { username: me.username, picks: me.picks, score: scorePicks(me.picks, games) } : null,
     leaderboard: leaderboard(contest, games),
     entries: contest.entries.length

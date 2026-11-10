@@ -11,93 +11,98 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <a class="skip" href="#picks">Skip to your picks</a>
 
-<header class="nav">
-  <div class="nav-in">
+<!-- Top bar -->
+<header class="topbar">
+  <div class="wrap topbar-in">
     <a class="logo" href="/"><img src="logo.png" alt="BetGRW" width="132" height="32"></a>
-    <nav class="nav-links" aria-label="Page sections">
-      <a href="#picks" class="on">Pick’em</a>
+    <nav class="topnav" aria-label="Sections">
+      <a href="#picks">Pick’em</a>
       <a href="#board">Leaderboard</a>
+      <a href="#georges">Georges</a>
       <a href="#rules">Rules</a>
     </nav>
-    <span class="nav-live" id="live-pill" hidden></span>
+    <span class="live-badge" id="live-pill" hidden></span>
   </div>
 </header>
 
-<div class="strip-wrap">
-  <div class="strip-in">
-    <span class="strip-title">NHL Saturday</span>
+<!-- Match strip -->
+<div class="strip-bar">
+  <div class="wrap strip-in">
     <ol class="strip" id="strip" aria-label="Saturday’s games"></ol>
   </div>
 </div>
 
-<div class="page">
-  <!-- PRIZE: edit the amount and the eligibility rule here -->
-  <section class="card prize" aria-labelledby="prize-h">
-    <div class="prize-amount">
-      <span class="prize-label">Grand prize</span>
-      <span class="prize-num" id="prize-h">$100</span>
+<!-- Section header with tabs -->
+<section class="hub" aria-labelledby="hub-h">
+  <div class="wrap">
+    <div class="hub-top">
+      <span class="hub-badge" aria-hidden="true">GL</span>
+      <div class="hub-title">
+        <h1 id="hub-h">Beat Georges</h1>
+        <p class="hub-meta"><span>Saturday NHL Pick’em</span><span id="date-label"></span></p>
+      </div>
+      <div class="hub-duel" aria-live="polite">
+        <div class="hd-side"><span class="hd-name">Georges</span><span class="hd-num" id="sb-georges">0</span></div>
+        <span class="hd-sep">:</span>
+        <div class="hd-side you"><span class="hd-num" id="sb-you">–</span><span class="hd-name" id="sb-you-label">You</span></div>
+      </div>
     </div>
-    <div class="prize-text">
-      <p class="prize-lead">The player with the most correct picks wins $100.</p>
-      <p class="prize-rule">To be eligible, you need at least a <strong>$20 deposit on betgrw.com in the last 30 days</strong>.</p>
+    <p class="hub-status"><span id="sb-strip">Loading Saturday’s games</span> <span class="hub-lock" id="lockline"></span></p>
+  </div>
+</section>
+<nav class="tabs" aria-label="Page tabs">
+    <div class="wrap tabs-in">
+      <a href="#picks" class="on">Picks</a>
+      <a href="#georges">Georges’ picks</a>
+      <a href="#board">Leaderboard</a>
+      <a href="#rules">Rules</a>
     </div>
+</nav>
+
+<!-- Prize -->
+<div class="wrap">
+  <section class="prize" aria-labelledby="prize-h">
+    <span class="prize-tag">Grand prize</span>
+    <span class="prize-num" id="prize-h">$100</span>
+    <p class="prize-text"><strong>Most correct picks wins $100.</strong> To be eligible, you need at least a $20 deposit on betgrw.com in the last 30 days.</p>
     <a class="prize-cta" href="https://betgrw.com" target="_blank" rel="noopener">Deposit at betgrw.com</a>
   </section>
+</div>
 
+<div class="wrap page">
   <main class="main-col">
 
-    <section class="card duel" aria-labelledby="duel-h">
-      <div class="duel-top">
-        <span class="duel-league">Saturday NHL Pick’em</span>
-        <span class="duel-date" id="date-label"></span>
-      </div>
-      <h1 id="duel-h">Beat Georges Laraque</h1>
-      <div class="duel-score" aria-live="polite">
-        <div class="duel-side">
-          <span class="avatar gl" aria-hidden="true">GL</span>
-          <span class="duel-name">Georges</span>
-        </div>
-        <div class="duel-num">
-          <span id="sb-georges">0</span><span class="colon">:</span><span id="sb-you">–</span>
-        </div>
-        <div class="duel-side">
-          <span class="avatar you" id="you-avatar" aria-hidden="true">?</span>
-          <span class="duel-name" id="sb-you-label">You</span>
+    <!-- Georges, expert-pick style -->
+    <section class="block expert" id="georges" aria-labelledby="georges-h">
+      <div class="expert-head">
+        <span class="avatar" aria-hidden="true">GL</span>
+        <div class="expert-id">
+          <h2 id="georges-h">Georges Laraque</h2>
+          <p>Former NHL enforcer. His winner in every Saturday game.</p>
         </div>
       </div>
-      <p class="duel-status" id="sb-strip">Loading Saturday’s games</p>
-      <p class="duel-lock" id="lockline"></p>
-    </section>
-
-    <section class="card expert" id="georges" aria-labelledby="georges-h">
-      <header class="card-head">
-        <span class="avatar gl big" aria-hidden="true">GL</span>
-        <div class="card-title">
-          <h2 id="georges-h">Georges Laraque’s picks</h2>
-          <p id="georges-sub">His winner in every Saturday game</p>
-        </div>
-        <div class="record" aria-label="Georges’ record this Saturday">
-          <span id="x-record">0–0</span>
-          <small>record</small>
-        </div>
-      </header>
+      <dl class="expert-stats">
+        <div><dt>Record</dt><dd id="x-record">0–0</dd></div>
+        <div><dt>Hit rate</dt><dd id="x-rate">–</dd></div>
+        <div><dt>Same as you</dt><dd id="x-agree">–</dd></div>
+      </dl>
       <ol class="xlist" id="tickets"></ol>
     </section>
 
-    <section class="card picks" id="picks" aria-labelledby="picks-h">
-      <header class="card-head plain">
-        <div class="card-title">
-          <h2 id="picks-h">Your picks</h2>
-          <p id="lock-sub">Pick the winner of every game. Overtime and shootouts count.</p>
-        </div>
+    <!-- Your picks, match-list style -->
+    <section class="block picks" id="picks" aria-labelledby="picks-h">
+      <header class="block-head">
+        <h2 id="picks-h">Your picks</h2>
+        <span class="block-aside" id="progress-text">0 of 0 picked</span>
       </header>
+      <p class="block-sub" id="lock-sub">Pick the winner of every Saturday game. Overtime and shootouts count.</p>
 
       <div class="name-row">
         <label for="username">BetGRW username</label>
@@ -105,14 +110,15 @@
         <p id="username-help" class="help">Use your betgrw.com username so we can confirm you’re eligible for the prize. It shows on the leaderboard.</p>
       </div>
 
-      <div class="phead" aria-hidden="true">
-        <span>Match</span><span>Your pick</span><span>Georges</span>
+      <div class="day-head">
+        <span id="day-label">Saturday</span>
+        <span class="dh-col">Your pick</span>
+        <span class="dh-gl">Georges</span>
       </div>
-      <ol class="prows" id="games"></ol>
+      <ol class="mlist" id="games"></ol>
 
-      <div class="submit-bar" id="submit-bar">
+      <div class="submit-bar">
         <div class="sb-progress">
-          <span id="progress-text">0 of 0 picked</span>
           <span class="sb-agree" id="agree"></span>
           <div class="bar" aria-hidden="true"><div id="progress-fill"></div></div>
         </div>
@@ -121,7 +127,7 @@
       <p class="status" id="status" role="status" aria-live="polite"></p>
     </section>
 
-    <details class="card rules" id="rules">
+    <details class="block rules" id="rules">
       <summary>How it works</summary>
       <ul>
         <li>The contest runs on Saturday NHL games only. Pick a winner in every game on Saturday’s slate. Overtime and shootout results count.</li>
@@ -137,12 +143,10 @@
   </main>
 
   <aside class="side-col">
-    <section class="card board" id="board" aria-labelledby="board-h">
-      <header class="card-head plain">
-        <div class="card-title">
-          <h2 id="board-h">Leaderboard</h2>
-          <p id="board-sub">One point per correct pick</p>
-        </div>
+    <section class="block board" id="board" aria-labelledby="board-h">
+      <header class="block-head">
+        <h2 id="board-h">Leaderboard</h2>
+        <span class="block-aside" id="board-sub"></span>
       </header>
       <table>
         <thead><tr><th scope="col">#</th><th scope="col">Player</th><th scope="col" class="num">Pts</th></tr></thead>
@@ -151,17 +155,24 @@
       <button class="more" id="more" type="button" hidden>Show all players</button>
     </section>
 
-    <section class="card facts" aria-label="This Saturday in numbers">
+    <section class="block facts" aria-label="This Saturday in numbers">
       <div class="fact"><span id="f-players">0</span><small>players in</small></div>
       <div class="fact"><span id="f-final">0/0</span><small>games final</small></div>
       <div class="fact"><span id="f-beat">0</span><small>ahead of Georges</small></div>
+    </section>
+
+    <section class="block feed" aria-labelledby="feed-h">
+      <header class="block-head">
+        <h2 id="feed-h">Latest entries</h2>
+      </header>
+      <ol class="feed-list" id="feed"></ol>
     </section>
   </aside>
 </div>
 
 <footer class="foot">
-  <div class="foot-in">
-    <span class="logo small"><img src="logo.png" alt="BetGRW" width="99" height="24"></span>
+  <div class="wrap foot-in">
+    <img src="logo.png" alt="BetGRW" width="99" height="24">
     <p>18+. Play responsibly. Game results from the NHL. BetGRW is not affiliated with the NHL or its teams.</p>
   </div>
 </footer>

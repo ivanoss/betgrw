@@ -85,6 +85,7 @@
     renderExpert();
     renderGames();
     renderBoard();
+    renderFeed();
   }
 
   function renderStrip() {
@@ -113,7 +114,9 @@
   }
 
   function renderDuel() {
-    $('#date-label').textContent = dayFmt.format(new Date(data.date + 'T12:00:00Z'));
+    const dayText = dayFmt.format(new Date(data.date + 'T12:00:00Z'));
+    $('#date-label').textContent = dayText;
+    $('#day-label').textContent = dayText;
     const games = playable();
     const live = games.filter(g => g.state === 'live').length;
     const final = games.filter(g => g.state === 'final').length;
@@ -121,7 +124,6 @@
     bump('#sb-georges', gs);
     bump('#sb-you', data.me ? data.me.score : '–');
     $('#sb-you-label').textContent = data.me ? data.me.username : 'You';
-    $('#you-avatar').textContent = data.me ? data.me.username.slice(0, 2).toUpperCase() : '?';
 
     let s;
     if (!games.length) s = 'No NHL games this Saturday. The next Saturday shows up here automatically.';
@@ -139,68 +141,77 @@
   function renderExpert() {
     const games = data.games.filter(g => data.expert[g.id]);
     const list = $('#tickets');
+    let w = 0, l = 0;
     if (!games.length) {
       list.innerHTML = `<li class="empty">${data.games.length ? 'Georges hasn’t posted his Saturday picks yet. Check back before the first puck drop.' : 'No games this Saturday. Georges will be back next Saturday.'}</li>`;
-      $('#x-record').textContent = '0–0';
-      return;
+    } else {
+      list.innerHTML = games.map(g => {
+        const pick = data.expert[g.id];
+        const t = pick === g.away.abbr ? g.away : g.home;
+        let cls = '', res = statusText(g);
+        if (g.winner) { if (g.winner === pick) { cls = 'hit'; res = 'Called it'; w++; } else { cls = 'miss'; res = 'Missed'; l++; } }
+        else if (g.state === 'live') { cls = 'live'; res = 'Live'; }
+        return `<li class="xrow ${cls}">
+          <span class="xmatch">${esc(g.away.abbr)} at ${esc(g.home.abbr)}</span>
+          <span class="xpick">${dot(t)}<span>${esc(info(t).city)} ${esc(info(t).name)}</span></span>
+          <span class="xres">${esc(res)}</span></li>`;
+      }).join('');
     }
-    let w = 0, l = 0;
-    list.innerHTML = games.map(g => {
-      const pick = data.expert[g.id];
-      const t = pick === g.away.abbr ? g.away : g.home;
-      let cls = '', res = statusText(g);
-      if (g.winner) { if (g.winner === pick) { cls = 'hit'; res = 'Called it'; w++; } else { cls = 'miss'; res = 'Missed'; l++; } }
-      else if (g.state === 'live') { cls = 'live'; res = 'Live'; }
-      return `<li class="xrow ${cls}">
-        <span class="xmatch">${esc(g.away.abbr)} at ${esc(g.home.abbr)}</span>
-        <span class="xpick">${dot(t)}${esc(info(t).city)} ${esc(info(t).name)}</span>
-        <span class="xres">${esc(res)}</span></li>`;
-    }).join('');
     $('#x-record').textContent = `${w}–${l}`;
-    $('#georges-sub').textContent = w + l ? `${w} right out of ${w + l} finished so far` : 'His winner in every Saturday game';
+    $('#x-rate').textContent = w + l ? Math.round(w / (w + l) * 100) + '%' : '–';
+    updateAgree();
   }
 
-  function oddBtn(g, t, home) {
+  function updateAgree() {
+    const both = playable().filter(g => data.expert[g.id] && draft[g.id]);
+    const agree = both.filter(g => draft[g.id] === data.expert[g.id]).length;
+    $('#x-agree').textContent = both.length ? `${agree}/${both.length}` : '–';
+    $('#agree').textContent = both.length ? `Same as Georges on ${agree} of ${both.length}` : '';
+  }
+
+  // Share of players on each side, shown inside the pick buttons once you've saved (or picks are locked)
+  function shares(g) {
+    const sp = data.split && data.split[g.id];
+    if (!sp || !((data.me && data.me.picks[g.id]) || data.locked)) return null;
+    const a = sp[g.away.abbr] || 0, h = sp[g.home.abbr] || 0;
+    if (!a && !h) return null;
+    const pa = Math.round(a / (a + h) * 100);
+    return { [g.away.abbr]: pa, [g.home.abbr]: 100 - pa };
+  }
+
+  function oddBtn(g, t, home, sh) {
     const i = info(t);
     const picked = draft[g.id] === t.abbr;
     const locked = data.locked || g.state === 'void';
     let cls = 'odd';
     if (g.winner && data.me && data.me.picks[g.id] === t.abbr) cls += g.winner === t.abbr ? ' right' : ' wrong';
+    const sub = sh ? `${sh[t.abbr]}%` : (home ? 'Home' : 'Away');
+    const label = `Pick ${i.city} ${i.name}` + (sh ? `, picked by ${sh[t.abbr]}% of players` : '');
     return `<button type="button" class="${cls}" data-game="${esc(g.id)}" data-team="${esc(t.abbr)}" aria-pressed="${picked}" ${locked ? 'disabled' : ''}
-      aria-label="Pick ${esc(i.city + ' ' + i.name)}"><b>${esc(t.abbr)}</b><small>${home ? 'Home' : 'Away'}</small></button>`;
-  }
-
-  function splitLine(g) {
-    const sp = data.split && data.split[g.id];
-    const saved = data.me && data.me.picks[g.id];
-    if (!sp || !(saved || data.locked)) return '';
-    const a = sp[g.away.abbr] || 0, h = sp[g.home.abbr] || 0, total = a + h;
-    if (!total) return '';
-    const pa = Math.round(a / total * 100);
-    return `<div class="split" aria-label="${pa}% of players picked ${esc(g.away.abbr)}, ${100 - pa}% picked ${esc(g.home.abbr)}">
-      <span>${esc(g.away.abbr)} ${pa}%</span><span class="split-bar"><i style="width:${pa}%"></i></span><span>${100 - pa}% ${esc(g.home.abbr)}</span></div>`;
+      aria-label="${esc(label)}"><b>${esc(t.abbr)}</b><small>${esc(sub)}</small></button>`;
   }
 
   function renderGames() {
     const list = $('#games');
     if (!data.games.length) {
-      list.innerHTML = '<li class="empty">No NHL games on the schedule this Saturday. The next Saturday will show up here automatically.</li>';
+      list.innerHTML = '<li class="empty" style="padding-left:16px">No NHL games on the schedule this Saturday. The next Saturday will show up here automatically.</li>';
     } else {
       list.innerHTML = data.games.map(g => {
         const team = t => {
           const i = info(t);
           const cls = g.winner ? (g.winner === t.abbr ? 'won' : 'lost') : '';
-          return `<span class="pteam ${cls}">${dot(t)}<span>${esc(i.city)} ${esc(i.name)}</span></span>`;
+          return `<span class="mteam ${cls}">${dot(t)}<span><span class="city">${esc(i.city)} </span>${esc(i.name)}</span></span>`;
         };
         const xp = data.expert[g.id];
         const gl = xp
-          ? `<div class="pgl ${g.winner && g.winner !== xp ? 'miss' : ''}"><small>Georges</small><b title="Georges’ pick">${esc(xp)}</b></div>`
-          : '<div class="pgl none">–</div>';
-        return `<li class="prow is-${g.state}">
-          <div class="pmatch"><span class="pstat ${g.state}">${esc(statusText(g))}</span>${team(g.away)}${team(g.home)}</div>
-          <div class="pbtns">${oddBtn(g, g.away, false)}${oddBtn(g, g.home, true)}</div>
+          ? `<div class="mgl ${g.winner ? (g.winner === xp ? 'hit' : 'miss') : ''}"><b title="Georges’ pick">${esc(xp)}</b></div>`
+          : '<div class="mgl none">–</div>';
+        const sh = shares(g);
+        return `<li class="mrow is-${g.state}">
+          <span class="mtime ${g.state}">${esc(statusText(g))}</span>
+          <div class="mteams">${team(g.away)}${team(g.home)}</div>
+          <div class="mbtns">${oddBtn(g, g.away, false, sh)}${oddBtn(g, g.home, true, sh)}</div>
           ${gl}
-          ${splitLine(g)}
         </li>`;
       }).join('');
     }
@@ -213,9 +224,7 @@
     const total = games.length;
     $('#progress-text').textContent = `${n} of ${total} picked`;
     $('#progress-fill').style.width = total ? (n / total * 100) + '%' : '0';
-    const withX = games.filter(g => data.expert[g.id] && draft[g.id]);
-    const agree = withX.filter(g => draft[g.id] === data.expert[g.id]).length;
-    $('#agree').textContent = withX.length ? `Same as Georges on ${agree} of ${withX.length}` : '';
+    updateAgree();
 
     const btn = $('#submit'), name = $('#username');
     const same = data.me && games.every(g => data.me.picks[g.id] === draft[g.id]) && data.me.username === name.value.trim();
@@ -224,13 +233,13 @@
     if (data.locked) {
       btn.disabled = true;
       btn.textContent = data.me ? 'Picks locked' : 'Entries closed';
-      $('#lock-sub').textContent = data.me ? 'Your picks are locked in. Winners mark themselves as games end.' : 'Picks locked at the first puck drop. Come back for the next slate.';
+      $('#lock-sub').textContent = data.me ? 'Your picks are locked in. Winners mark themselves as games end.' : 'Picks locked at the first puck drop. Come back next Saturday.';
     } else {
       btn.disabled = saving || !total || n !== total || same;
       btn.textContent = saving ? 'Saving' : same ? 'Picks saved' : data.me ? 'Update picks' : 'Submit picks';
       $('#lock-sub').textContent = data.lockAt
         ? `Pick the winner of every Saturday game. Picks lock ${fmtDay(data.lockAt)} at ${fmtTime(data.lockAt)}.`
-        : 'Pick the winner of every game. Overtime and shootouts count.';
+        : 'Pick the winner of every Saturday game. Overtime and shootouts count.';
     }
   }
 
@@ -243,20 +252,19 @@
     $('#f-players').textContent = data.entries;
     $('#f-final').textContent = `${graded}/${total}`;
     $('#f-beat').textContent = beat;
-    $('#board-sub').textContent = graded ? `${graded} of ${total} games final` : 'Points start when the first game ends';
+    $('#board-sub').textContent = graded ? `${graded} of ${total} final` : `${data.entries} ${data.entries === 1 ? 'player' : 'players'}`;
 
     const myName = data.me && data.me.username.toLowerCase();
     const isMe = r => !r.expert && r.name.toLowerCase() === myName;
     const TOP = 10;
-    let shown = rows;
-    let hidden = 0;
+    let shown = rows, hidden = 0;
     if (!showAll && rows.length > TOP + 2) {
       const keep = new Set(rows.slice(0, TOP));
       rows.forEach(r => { if (r.expert || isMe(r)) keep.add(r); });
       shown = rows.filter(r => keep.has(r));
       hidden = rows.length - shown.length;
     }
-    const row = r => `<tr class="${r.expert ? 'is-georges' : ''} ${isMe(r) ? 'is-me' : ''} ${r.rank === 1 && !r.expert ? 'top1' : ''}">
+    const row = r => `<tr class="${r.expert ? 'is-georges' : ''} ${isMe(r) ? 'is-me' : ''} ${r.rank === 1 && !r.expert && graded ? 'top' : ''}">
       <td class="place">${r.rank}</td>
       <td class="player">${esc(r.name)}${isMe(r) ? '<span class="mark me">You</span>' : ''}${!r.expert && g && graded && r.score > g.score ? '<span class="mark beat">Beat Georges</span>' : ''}</td>
       <td class="pts">${r.score}</td></tr>`;
@@ -268,7 +276,23 @@
     $('#rows').innerHTML = rows.length ? html : '<tr><td colspan="3" class="board-empty">No entries yet. Make your picks and be the first name here.</td></tr>';
     const more = $('#more');
     more.hidden = !hidden && !showAll;
-    more.textContent = showAll ? 'Show top 10' : `Show all ${rows.length} players`;
+    more.textContent = showAll ? 'Show top 10' : 'Show full leaderboard';
+  }
+
+  const ago = ms => {
+    const m = Math.max(0, Math.round((Date.now() - ms) / 60000));
+    if (m < 1) return 'now';
+    if (m < 60) return m + 'm';
+    const h = Math.round(m / 60);
+    if (h < 24) return h + 'h';
+    return Math.round(h / 24) + 'd';
+  };
+  function renderFeed() {
+    const items = data.recent || [];
+    $('#feed').innerHTML = items.length ? items.map(r => `<li>
+      <time datetime="${new Date(r.at).toISOString()}">${ago(r.at)}</time>
+      <span><b>${esc(r.name)}</b> <span class="what">${r.edited ? 'updated their picks' : 'is in'}</span></span></li>`).join('')
+      : '<li class="empty">No entries yet this Saturday.</li>';
   }
 
   /* ---------- Actions ---------- */
@@ -285,11 +309,12 @@
   $('#username').addEventListener('input', () => { if (data) updateEntry(); });
   $('#more').addEventListener('click', () => { showAll = !showAll; renderBoard(); });
 
-  // Mark the menu link that was used
-  const links = [...document.querySelectorAll('.nav-links a')];
-  links.forEach(a => a.addEventListener('click', () => {
-    links.forEach(l => l.classList.toggle('on', l === a));
-    if (a.getAttribute('href') === '#rules') $('#rules').open = true;
+  // Tabs and top menu: mark the tab that was used, open the rules when jumping to them
+  const tabs = [...document.querySelectorAll('.tabs a')];
+  document.querySelectorAll('.tabs a, .topnav a').forEach(a => a.addEventListener('click', () => {
+    const href = a.getAttribute('href');
+    tabs.forEach(t => t.classList.toggle('on', t.getAttribute('href') === href));
+    if (href === '#rules') $('#rules').open = true;
   }));
 
   function setStatus(msg, kind) {
@@ -329,7 +354,7 @@
   setInterval(() => {
     if (!data || data.locked) return;
     if (data.lockAt && Date.now() >= data.lockAt) load();
-    else { renderDuel(); updateEntry(); }
+    else { renderDuel(); updateEntry(); renderFeed(); }
   }, 30000);
   load();
 })();
