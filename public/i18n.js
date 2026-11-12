@@ -1,5 +1,5 @@
 // English (default) and French text for the public pages.
-// Language: ?lang=fr or ?lang=en in the link, then the visitor's last choice, otherwise English.
+// Language: ?lang=fr or ?lang=en in the link, then the visitor's last choice, otherwise French.
 (function () {
   'use strict';
   const S = {
@@ -259,7 +259,7 @@
   };
   const fromUrl = new URLSearchParams(location.search).get('lang');
   let lang = fromUrl === 'fr' || fromUrl === 'en' ? fromUrl : store.get('bg_lang');
-  if (lang !== 'fr') lang = 'en'; // English unless French was chosen
+  if (lang !== 'en') lang = 'fr'; // French unless English was chosen
   if (fromUrl === 'fr' || fromUrl === 'en') store.set('bg_lang', lang);
   const fr = lang === 'fr';
   const LOCALE = fr ? 'fr-CA' : 'en-US';

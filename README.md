@@ -93,6 +93,6 @@ Any Node host works. Settings:
 - In `/admin`, above Georges' picks: a short intro for the week, plus an optional one-line reason under each game. They show on his card on the site.
 
 ## English and French
-- The site is in English by default. The **FR / EN** button in the header switches language, and the choice is remembered on that device.
-- Link straight to French with `?lang=fr` (e.g. `betgrw.net/?lang=fr`).
+- The site is in French by default. The **EN / FR** button in the header switches language, and the choice is remembered on that device.
+- Link straight to English with `?lang=en` (e.g. `betgrw.net/?lang=en`).
 - All public text lives in `public/i18n.js` (an `en` and an `fr` list). Change wording there. The admin page stays in English.
