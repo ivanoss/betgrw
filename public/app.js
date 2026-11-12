@@ -487,7 +487,7 @@
     if (!standings) return;
     const views = ['Atlantic', 'Metropolitan', 'Central', 'Pacific', 'League'];
     if (!views.includes(nhlView)) nhlView = 'Atlantic';
-    document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === nhlView)));
+    document.querySelectorAll('#nhl-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === nhlView)));
     const sorted = [...standings].sort((a, b) => b.pts - a.pts || a.gp - b.gp || b.w - a.w);
     const list = nhlView === 'League' ? sorted : sorted.filter(t => t.div === nhlView);
     const playing = new Set();
@@ -505,7 +505,7 @@
     if (nhlView !== 'League') notes.push(`<span>${esc(t('nhl.line'))}</span>`);
     $('#nhl-note').innerHTML = notes.join(' ');
   }
-  document.querySelector('.seg').addEventListener('click', e => {
+  document.querySelector('#nhl-seg').addEventListener('click', e => {
     const b = e.target.closest('button[data-view]');
     if (!b) return;
     nhlView = b.dataset.view;
