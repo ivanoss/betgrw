@@ -13,7 +13,7 @@
 <body>
 <header class="top">
   <a class="brand" href="/"><img src="/logo.png" alt="BetGRW" width="124" height="30"></a>
-  <nav class="admin-links"><a href="/admin" class="back">NHL admin</a><a href="/f1" class="back">View the F1 page</a></nav>
+  <nav class="admin-links"><a href="/admin/nhl" class="back">NHL admin</a><a href="/f1" class="back">View the F1 page</a></nav>
 </header>
 <main>
   <h1 class="admin-h">F1 Las Vegas</h1>
@@ -42,7 +42,7 @@
         <h2>Tagliani’s prediction</h2>
         <p class="block-sub" id="race-info"></p>
       </div>
-      <label class="intro-label" for="intro">Tagliani’s take <span>(optional, shows above his podium)</span></label>
+      <label class="intro-label" for="intro">Tagliani’s take <span>(optional, shows above his prediction)</span></label>
       <textarea id="intro" maxlength="400" rows="3" placeholder="e.g. Long straights, cold tires: I like Verstappen here."></textarea>
       <div class="f1-selects" id="x-selects"></div>
       <div class="admin-actions">
@@ -56,16 +56,20 @@
 
     <section class="block">
       <div class="block-head">
-        <h2>Official result</h2>
+        <h2>Official result (automatic)</h2>
         <p class="block-sub" id="result-info"></p>
       </div>
-      <div class="f1-selects" id="r-selects"></div>
-      <div class="admin-actions">
-        <button class="text-btn" type="button" data-fill="#r-selects">Fill empty spots in championship order</button>
-        <button class="submit" id="save-result" type="button">Save official order</button>
-        <button class="text-btn" id="clear-result" type="button">Use the automatic result</button>
-        <p class="status" id="result-status" role="status"></p>
-      </div>
+      <ol class="auto-result" id="auto-result"></ol>
+      <details class="manual" id="manual">
+        <summary>Fix the result by hand (only if the automatic one is wrong)</summary>
+        <div class="f1-selects" id="r-selects"></div>
+        <div class="admin-actions">
+          <button class="text-btn" type="button" data-fill="#r-selects">Fill empty spots in championship order</button>
+          <button class="submit" id="save-result" type="button">Save official order</button>
+          <button class="text-btn" id="clear-result" type="button">Go back to the automatic result</button>
+        </div>
+      </details>
+      <p class="status" id="result-status" role="status"></p>
     </section>
 
     <div class="line blue" aria-hidden="true"></div>
@@ -95,7 +99,13 @@
 <style>
   .f1-selects { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 12px; margin-top: 14px; }
   .f1-selects label { display: grid; gap: 4px; font-weight: 600; font-size: 14px; }
-  .f1-selects select { font: inherit; padding: 9px 10px; border: 1px solid var(--boards); border-radius: 4px; background: #fff; }
+  .f1-selects label { min-width: 0; }
+  .f1-selects select { width: 100%; min-width: 0; font: inherit; padding: 9px 10px; border: 1px solid var(--boards); border-radius: 4px; background: #fff; }
+  .auto-result { margin: 0 0 12px; padding-left: 26px; columns: 2; column-gap: 32px; font-size: 15px; }
+  .auto-result li { padding: 3px 0; break-inside: avoid; }
+  .auto-result li:nth-child(-n+3) { font-weight: 700; }
+  .manual { margin-top: 8px; border: 1px solid var(--boards); border-radius: 6px; padding: 10px 14px; background: #fff; }
+  .manual summary { cursor: pointer; font-weight: 600; }
   .grid td.hit { color: #0A8A3F; font-weight: 700; }
   .grid td.close { color: #9A6B00; font-weight: 700; }
   .grid td.miss { color: #D7263D; }

@@ -65,11 +65,18 @@
     selects('#x-selects', state.expert);
 
     selects('#r-selects', state.result || state.feedOrder);
+    const checked = state.checkedAt ? ` Last checked ${timeFmt.format(new Date(state.checkedAt))}.` : '';
     $('#result-info').textContent = state.result
-      ? `You entered the order by hand (winner: ${name(state.result[0])}). It overrides the automatic result.`
+      ? `You set the order by hand. It overrides the automatic result until you go back to automatic.`
       : state.feedOrder
-        ? `Automatic result from the F1 feed (winner: ${name(state.feedOrder[0])}). Only change it if the feed is wrong, for example after a post-race penalty.`
-        : 'The full order fills in automatically from the F1 feed after the race, usually within an hour. If it doesn’t, set the order here and save.';
+        ? `Done automatically: the official classification came in from the F1 results feed. Points, ranks and the merch winner are updated. Nothing to do.${checked}`
+        : state.locked
+          ? `Automatic: the site checks the F1 results feed every minute and fills in the full order as soon as it’s published (usually within an hour or two of the checkered flag). Points and the merch winner update on their own. Nothing to do.${checked}`
+          : `Automatic: after the race, the site fills in the full order from the F1 results feed and scores everyone on its own. Nothing to do.${checked}`;
+    const ord = state.order;
+    $('#auto-result').hidden = !ord;
+    $('#auto-result').innerHTML = ord ? ord.map(id => `<li>${esc(name(id))}</li>`).join('') : '';
+    if (state.result) $('#manual').open = true;
     renderRows();
   }
 
@@ -149,4 +156,6 @@
   });
 
   if (pw) load(); else { $('#login').hidden = false; }
+  // While waiting for the result, refresh on its own so it shows up here without reloading
+  setInterval(() => { if (state && state.locked && !state.order && !document.hidden && !document.activeElement.closest('select, textarea, input')) load(); }, 60000);
 })();

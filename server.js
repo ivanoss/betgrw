@@ -544,6 +544,7 @@ async function f1Feed() {
             .map(d => ({ ...d, team: (F1_GRID.find(g => g.id === d.id) || {}).team || d.team || '' }));
         }
         data.fromFeed = true;
+        data.checkedAt = Date.now();
       }
     }
   } catch (err) {
@@ -664,7 +665,7 @@ async function handleF1Admin(req, res, route) {
     const settings = await getRecord('settings', {});
     const byName = new Map(snap.rows.filter(r => !r.expert).map(r => [r.name, r]));
     return send(res, 200, {
-      race: F1.name, lockAt: snap.lockAt, locked: snap.locked, drivers: snap.feed.drivers, fromFeed: snap.feed.fromFeed,
+      race: F1.name, lockAt: snap.lockAt, locked: snap.locked, drivers: snap.feed.drivers, fromFeed: snap.feed.fromFeed, checkedAt: snap.feed.checkedAt || null,
       feedOrder: snap.feed.order, result: contest.result || null, order: snap.order,
       expert: contest.expert, intro: contest.intro || '', home: settings.home || 'auto', homeUntil: F1.homeUntil, homeNow: await f1IsHome(),
       prizes: F1.prizes, maxPerNetwork: MAX_PER_NETWORK, okNets: contest.okNets,
@@ -930,8 +931,10 @@ async function serveStatic(req, res, pathname) {
   if (pathname === '/') pathname = (await f1IsHome()) ? '/f1.html' : '/index.html';
   if (pathname === '/nhl') pathname = '/index.html';
   if (pathname === '/f1') pathname = '/f1.html';
+  // /admin opens whichever contest is on the homepage; both are always reachable directly
   if (pathname === '/admin/f1') pathname = '/admin-f1.html';
-  if (pathname === '/admin') pathname = '/admin.html';
+  if (pathname === '/admin/nhl') pathname = '/admin.html';
+  if (pathname === '/admin') pathname = (await f1IsHome()) ? '/admin-f1.html' : '/admin.html';
   if (pathname === '/results') pathname = '/results.html';
   const file = path.normalize(path.join(PUBLIC_DIR, pathname));
   if (!file.startsWith(PUBLIC_DIR + path.sep)) return send(res, 404, 'Not found');

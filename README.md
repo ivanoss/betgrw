@@ -100,7 +100,7 @@ Any Node host works. Settings:
 ## F1: Beat Tagliani (Las Vegas Grand Prix, Nov 21, 2026)
 - Players predict the full finishing order, 1st to last (tap drivers in order, adjust with ↑ ↓, or fill the rest in championship order). Each driver in the exact right place: 5 points in the top 3, 1 point from 4th to last. Prize: 1st place wins an Alex Tagliani merch pack (no cash). Ties for 1st: draw one winner among them.
 - **Homepage:** the F1 page is the homepage until Tuesday Nov 24, 6 AM Eastern, then the NHL site comes back on its own. The NHL site is always at `/nhl`, the F1 page at `/f1`. Switch it by hand in `/admin/f1` → **Homepage shows**.
-- **`/admin/f1`:** Tagliani's podium and take, the official result, players' picks with CSV download.
-- Drivers and the result come from the free Jolpica F1 feed (api.jolpi.ca). If it's down, the built-in 2026 grid is used, and you can type the official podium in `/admin/f1` (it overrides the feed).
+- **`/admin` opens the F1 admin while F1 is on the homepage** (NHL admin: `/admin/nhl`). **`/admin/f1`:** Tagliani's podium and take, the official result, players' picks with CSV download.
+- Drivers and the result come from the free Jolpica F1 feed (api.jolpi.ca). The official result fills in automatically after the race (the site checks every minute); fixing it by hand in `/admin/f1` is only for a wrong feed.
 - Tagliani’s photo is `public/tagliani.jpg` (square, 400×400).
 - The F1 race doesn't count toward the NHL season. Usernames are shared with the NHL contest, so nobody can take a regular's name.
