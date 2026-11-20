@@ -94,8 +94,13 @@
     $('#date-label').textContent = dayFmt.format(start);
     $('#start-label').textContent = timeFmt.format(start);
     const xr = expertRow();
-    $('#sb-expert').textContent = data.final && xr ? xr.score : '–';
-    $('#sb-you').textContent = data.final && data.me ? data.me.score : '–';
+    // Before the result there are no points yet: show "VS" instead of empty scores
+    const scored = data.final;
+    $('#sb-expert').textContent = scored && xr ? xr.score : '';
+    $('#sb-you').textContent = scored && data.me ? data.me.score : '';
+    $('#sb-expert').hidden = $('#sb-you').hidden = !scored;
+    $('.f1-hub .hd-sep').textContent = scored ? ':' : 'VS';
+    $('.f1-hub .hd-sep').classList.toggle('vs', !scored);
     $('#sb-you-label').textContent = data.me ? data.me.username : t('duel.you');
     let s;
     if (data.final) {

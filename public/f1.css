@@ -254,3 +254,4 @@
 .past-wins li .tbar { height: 18px; }
 .past-wins li small { color: var(--ink-3); font-size: 12px; }
 @media (prefers-reduced-motion: reduce) { .trk-car { display: none; } }
+.hd-sep.vs { font: italic 700 15px/1 var(--num); letter-spacing: .04em; color: var(--red); padding: 0 4px; }
