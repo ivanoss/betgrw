@@ -59,7 +59,7 @@
       <div class="hd-side you"><span class="hd-num" id="sb-you">–</span><span class="hd-name" id="sb-you-label" data-i18n="duel.you">Vous</span></div>
     </div>
   </div>
-  <div class="wrap"><p class="hub-status" id="sb-strip" data-i18n="f1.loading">Chargement de la course</p></div>
+  <div class="wrap f1-statusline"><span class="lights" id="lights" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><p class="hub-status" id="sb-strip" data-i18n="f1.loading">Chargement de la course</p></div>
 </section>
 
 <!-- Prize -->
@@ -170,6 +170,35 @@
       </table>
       <button class="more" id="more" type="button" hidden></button>
       <p class="board-note" id="board-note"></p>
+    </section>
+
+    <section class="block f1-track" aria-labelledby="track-h">
+      <header class="block-head"><h2 id="track-h" data-i18n="f1.trackTitle">Le circuit</h2><span class="block-aside" data-i18n="f1.trackSub">Las Vegas Strip Circuit</span></header>
+      <div class="track-map">
+        <svg viewBox="0 0 240 150" role="img" aria-label="Las Vegas Strip Circuit" data-i18n-aria="f1.trackAria">
+          <path class="trk-shadow" d="M176 128 L62 128 Q44 128 42 112 L38 36 Q37 22 52 20 L132 16 Q146 15 150 26 Q155 40 170 34 Q188 26 196 40 L200 92 Q201 100 192 102 L184 104 Q178 106 184 112 L196 120 Q202 128 192 130 Z"/>
+          <path class="trk" id="trk" d="M176 128 L62 128 Q44 128 42 112 L38 36 Q37 22 52 20 L132 16 Q146 15 150 26 Q155 40 170 34 Q188 26 196 40 L200 92 Q201 100 192 102 L184 104 Q178 106 184 112 L196 120 Q202 128 192 130 Z"/>
+          <circle class="trk-car" r="4.2"><animateMotion dur="7s" repeatCount="indefinite" rotate="auto"><mpath href="#trk"/></animateMotion></circle>
+          <g class="trk-flag" transform="translate(150 118)"><rect width="12" height="16" fill="#fff"/><rect width="4" height="4"/><rect x="8" width="4" height="4"/><rect x="4" y="4" width="4" height="4"/><rect y="8" width="4" height="4"/><rect x="8" y="8" width="4" height="4"/><rect x="4" y="12" width="4" height="4"/></g>
+          <text x="22" y="78" class="trk-label" transform="rotate(-90 22 78)">THE STRIP</text>
+          <circle class="trk-sphere" cx="168" cy="18" r="9"/><text x="168" y="21.5" class="trk-sph">SPHERE</text>
+        </svg>
+      </div>
+      <dl class="track-stats">
+        <div><dt data-i18n="f1.tLength">Longueur</dt><dd>6,201 km</dd></div>
+        <div><dt data-i18n="f1.tLaps">Tours</dt><dd>50</dd></div>
+        <div><dt data-i18n="f1.tTurns">Virages</dt><dd>17</dd></div>
+        <div><dt data-i18n="f1.tDist">Distance</dt><dd>309,958 km</dd></div>
+      </dl>
+      <p class="track-record"><span data-i18n="f1.tRecord">Record du tour</span> <b>1:34.876</b> · Lando Norris, 2024</p>
+      <div class="past-wins">
+        <h3 data-i18n="f1.tPast">Derniers gagnants</h3>
+        <ol>
+          <li><span>2025</span><i class="tbar" style="--team:#3671C6"></i><b>Max Verstappen</b><small>Red Bull</small></li>
+          <li><span>2024</span><i class="tbar" style="--team:#00A19C"></i><b>George Russell</b><small>Mercedes</small></li>
+          <li><span>2023</span><i class="tbar" style="--team:#3671C6"></i><b>Max Verstappen</b><small>Red Bull</small></li>
+        </ol>
+      </div>
     </section>
 
     <section class="block f1-points" aria-labelledby="pts-h">

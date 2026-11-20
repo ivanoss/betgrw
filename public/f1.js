@@ -105,6 +105,8 @@
     } else if (data.locked) s = t('f1.stRacing');
     else s = t('f1.stUpcoming', { time: longFmt.format(start) });
     $('#sb-strip').textContent = s;
+    // Starting lights: all five red before the race, out once it starts, green at the finish
+    $('#lights').className = 'lights ' + (data.final ? 'is-done' : data.locked ? 'is-out' : 'is-on');
     if (!data.locked) { $('#lock-label').textContent = t('hub.lockIn'); $('#lockline').textContent = until(data.lockAt - Date.now()); }
     else { $('#lock-label').textContent = t('hub.status'); $('#lockline').textContent = data.final ? t('f1.final') : t('f1.racing'); }
 
