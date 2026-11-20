@@ -111,7 +111,12 @@
       </header>
       <p class="block-sub" id="lock-sub" data-i18n="f1.howTo">Choisissez le gagnant, le 2e et le 3e.</p>
 
-      <div class="entry-form">
+
+      <p class="f1-step" id="step" aria-live="polite"></p>
+      <ol class="pod mine" id="my-pod" aria-label="Votre podium" data-i18n-aria="f1.myPod"></ol>
+      <ol class="dgrid" id="drivers"></ol>
+
+      <div class="entry-form after-grid">
         <div class="field">
           <label for="username" data-i18n="form.username">Nom d’utilisateur BetGRW</label>
           <input id="username" name="username" type="text" maxlength="20" autocomplete="nickname" spellcheck="false" placeholder="ex. HabsFan_514" data-i18n-ph="form.usernamePh" aria-describedby="username-help">
@@ -129,13 +134,6 @@
         <div class="trap" aria-hidden="true"><label for="website" data-i18n="form.trap">Laissez ce champ vide</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
       </div>
 
-      <ol class="pod mine" id="my-pod" aria-label="Votre podium" data-i18n-aria="f1.myPod"></ol>
-
-      <div class="day-head f1-head">
-        <span data-i18n="f1.driver">Pilote</span>
-        <span class="dh-col" data-i18n="f1.place">Position</span>
-      </div>
-      <ol class="mlist dlist" id="drivers"></ol>
 
       <div class="submit-bar">
         <div class="sb-progress">

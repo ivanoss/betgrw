@@ -167,10 +167,34 @@
     intro.textContent = data.intro || '';
   }
 
+  // The spot the next driver tap fills: the one you tapped, otherwise the first empty one
+  let slot = null;
+  const activeSlot = () => (slot !== null ? slot : draft.indexOf(null));
+
   function renderMine() {
     const locked = data.locked;
-    const shown = locked ? (data.me ? data.me.picks : [null, null, null]) : draft;
-    $('#my-pod').innerHTML = pod(shown, data.final ? data.podium : null, { clear: !locked, empty: t('f1.choose') });
+    if (locked) {
+      $('#my-pod').innerHTML = pod(data.me ? data.me.picks : [null, null, null], data.final ? data.podium : null, { empty: '–' });
+      $('#step').hidden = true;
+      return;
+    }
+    const act = activeSlot();
+    $('#my-pod').innerHTML = [0, 1, 2].map(i => {
+      const d = driver(draft[i]);
+      return `<li class="p${i + 1} ${i === act ? 'active' : ''} ${d ? 'filled' : ''}" style="--team:${d ? teamColor(d.team) : 'transparent'}">
+        <button type="button" class="pod-btn" data-slot="${i}" aria-label="${esc(t('f1.slotAria', { place: PLACE(i) }))}">
+          <span class="pod-pos">${i === 0 ? esc(t('f1.winner')) : PLACE(i)}</span>
+          ${d ? `<span class="pod-name"><span class="pod-first">${esc(d.first)} </span>${esc(d.last)}</span><span class="pod-team">${esc(d.team || '')}</span>`
+              : `<span class="pod-name empty">${esc(i === act ? t('f1.tapDriver') : t('f1.choose'))}</span>`}
+        </button>
+        ${d ? `<button type="button" class="pod-x" data-clear="${i}" aria-label="${esc(t('f1.clear', { place: PLACE(i) }))}">×</button>` : ''}
+      </li>`;
+    }).join('');
+    const step = $('#step');
+    step.hidden = false;
+    step.className = 'f1-step' + (act === -1 ? ' done' : '');
+    step.innerHTML = act === -1 ? esc(t('f1.stepDone'))
+      : `<b>${act + 1}</b>${esc(t(['f1.step1', 'f1.step2', 'f1.step3'][act]))}`;
   }
 
   // Share of players who picked each driver to win, shown once you've entered (or picks are locked)
@@ -185,23 +209,22 @@
     const share = winShare();
     const finish = data.final ? data.podium : null;
     $('#drivers').innerHTML = data.drivers.map(d => {
-      const at = draft.indexOf(d.id);
       const mineAt = data.me ? data.me.picks.indexOf(d.id) : -1;
-      const sel = locked ? mineAt : at;
+      const sel = locked ? mineAt : draft.indexOf(d.id);
       const fin = finish ? finish.indexOf(d.id) : -1;
-      const btns = [0, 1, 2].map(i => {
-        let cls = 'odd';
-        if (finish && mineAt === i) cls += finish[i] === d.id ? ' right' : finish.includes(d.id) ? ' near' : ' wrong';
-        return `<button type="button" class="${cls}" data-driver="${esc(d.id)}" data-pos="${i}" aria-pressed="${sel === i}" ${locked ? 'disabled' : ''}
-          aria-label="${esc(t('f1.pickAria', { name: fullName(d), place: PLACE(i) }))}"><b>${PLACE(i)}</b></button>`;
-      }).join('');
+      let cls = 'dcard';
+      if (sel >= 0) cls += ' sel';
+      if (finish && mineAt >= 0) cls += finish[mineAt] === d.id ? ' right' : finish.includes(d.id) ? ' near' : ' wrong';
+      if (fin >= 0) cls += ' on-pod';
       const pct = share ? share(d.id) : null;
-      return `<li class="mrow drow ${fin >= 0 ? 'on-pod' : ''}" style="--team:${teamColor(d.team)}">
-        <span class="dname"><i class="tbar" aria-hidden="true"></i><span class="dtext"><span class="dn"><span class="dfirst">${esc(d.first)} </span><b>${esc(d.last)}</b></span>
+      return `<li><button type="button" class="${cls}" data-driver="${esc(d.id)}" aria-pressed="${sel >= 0}" ${locked ? 'disabled' : ''} style="--team:${teamColor(d.team)}"
+          aria-label="${esc(fullName(d) + (sel >= 0 ? ', ' + PLACE(sel) : ''))}">
+        <i class="tbar" aria-hidden="true"></i>
+        <span class="dtext"><span class="dn"><span class="dfirst">${esc(d.first)} </span><b>${esc(d.last)}</b></span>
           <small>${esc(d.team || '')}${pct ? ` · ${esc(t('f1.winPct', { p: pct }))}` : ''}</small></span>
-          ${fin >= 0 ? `<span class="dfin">${PLACE(fin)}</span>` : ''}</span>
-        <div class="mbtns three">${btns}</div>
-      </li>`;
+        ${sel >= 0 ? `<span class="dsel">${sel === 0 && !locked ? '★ ' : ''}${PLACE(sel)}</span>` : ''}
+        ${fin >= 0 ? `<span class="dfin" title="${esc(t('f1.resultTitle'))}">${PLACE(fin)}</span>` : ''}
+      </button></li>`;
     }).join('');
     updateEntry();
   }
@@ -286,24 +309,32 @@
   $('#drivers').addEventListener('click', e => {
     const b = e.target.closest('button[data-driver]');
     if (!b || b.disabled || !data || data.locked) return;
-    const id = b.dataset.driver, pos = Number(b.dataset.pos);
-    if (draft[pos] === id) draft[pos] = null;          // tap again to clear
+    const id = b.dataset.driver;
+    const was = draft.indexOf(id);
+    if (was >= 0) { draft[was] = null; slot = was; }     // tap a chosen driver again to take him off
     else {
-      const was = draft.indexOf(id);
-      if (was >= 0) draft[was] = null;                  // a driver can only hold one spot
-      draft[pos] = id;
+      const at = activeSlot();
+      if (at === -1) { setStatus(t('f1.full'), 'error'); return; } // podium full: tap a spot or a chosen driver first
+      draft[at] = id;
+      slot = null;                                       // move on to the next empty spot
     }
     saveDraft();
     renderMine();
     renderDrivers();
-    const again = document.querySelector(`button[data-driver="${CSS.escape(id)}"][data-pos="${pos}"]`);
-    if (again) again.focus();
+    const again = document.querySelector(`button[data-driver="${CSS.escape(id)}"]`);
+    if (again) again.focus({ preventScroll: true });
     setStatus('');
+    if (draft.every(Boolean) && was < 0 && !$('#username').value.trim()) $('.entry-form').scrollIntoView({ block: 'center', behavior: 'smooth' });
   });
   $('#my-pod').addEventListener('click', e => {
-    const b = e.target.closest('button[data-clear]');
-    if (!b || data.locked) return;
-    draft[Number(b.dataset.clear)] = null;
+    if (data.locked) return;
+    const x = e.target.closest('button[data-clear]');
+    if (x) { draft[Number(x.dataset.clear)] = null; slot = Number(x.dataset.clear); }
+    else {
+      const b = e.target.closest('button[data-slot]');
+      if (!b) return;
+      slot = Number(b.dataset.slot);                     // the next driver you tap goes here
+    }
     saveDraft(); renderMine(); renderDrivers();
   });
   $('#username').addEventListener('input', () => { if (data) updateEntry(); });
