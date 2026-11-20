@@ -215,11 +215,6 @@
     repeating-linear-gradient(115deg, #E10600 0 24px, #FFFFFF 24px 48px);
   border-bottom: 1px solid #D5DAE0;
 }
-.f1-hub::after { /* checkered flag fading in on the right */
-  content: ''; position: absolute; right: 0; top: 13px; bottom: 0; width: 46%; pointer-events: none;
-  background: conic-gradient(#0A1128 25%, transparent 0 50%, #0A1128 0 75%, transparent 0) 0 0 / 22px 22px;
-  opacity: .07; -webkit-mask-image: linear-gradient(90deg, transparent, #000 70%); mask-image: linear-gradient(90deg, transparent, #000 70%);
-}
 .f1-hub .hub-in, .f1-hub .wrap { position: relative; z-index: 1; }
 .f1-hub .hub-in { padding-top: 28px; }
 .f1-hub h1 { font-style: italic; letter-spacing: -.01em; }
