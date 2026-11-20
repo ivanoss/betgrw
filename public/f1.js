@@ -128,11 +128,10 @@
 
   function renderPrize() {
     const lb = data.leaderboard;
-    $('#pool').textContent = L.money(lb.pool);
-    $('#prize-h').textContent = t('f1.prizeHead', { n: lb.prizes.length, pool: L.money(lb.pool) });
-    const out = [];
-    lb.prizes.forEach((p, i) => out.push(`<li><span>${PLACE(i)}</span><b>${L.money(p)}</b></li>`));
-    $('#payouts').innerHTML = out.join('');
+    // Prize for this race: an Alex Tagliani merch pack for 1st place (no cash)
+    $('#pool').textContent = t('f1.merchBig');
+    $('#prize-h').textContent = t('f1.merchHead');
+    $('#payouts').hidden = true;
   }
 
   // One podium: three cells. `against` is the official podium, to mark right and wrong.
@@ -262,7 +261,7 @@
     const isMe = r => !r.expert && r.name.toLowerCase() === myName;
     const xr = expertRow();
     $('#board-sub').textContent = t(data.entries === 1 ? 'board.players1' : 'board.playersN', { n: data.entries });
-    $('#board-t').classList.toggle('with-prize', data.final);
+    $('#board').classList.toggle('with-prize', data.final);
     const TOP = 10;
     let shown = rows, hidden = 0;
     if (!showAll && rows.length > TOP + 2) {
@@ -278,10 +277,10 @@
         <td class="place">${r.expert || !data.final ? '–' : r.rank}</td>
         <td class="player">${r.expert ? `<span class="gname"><img class="gphoto xs" src="tagliani.jpg" alt="" width="22" height="22">${esc(r.name)}</span>` : esc(r.name)}${isMe(r) ? `<span class="mark me">${esc(t('mark.you'))}</span>` : ''}${!r.expert && data.final && xr && r.score > xr.score ? `<span class="mark beat">${esc(t('f1.beat'))}</span>` : ''}</td>
         <td class="pts">${data.final ? r.score : ''}</td>
-        <td class="num prize-col">${!r.expert && r.prize ? L.money(r.prize) : ''}</td></tr>`;
+        <td class="num prize-col">${!r.expert && data.final && r.rank === 1 ? `<span class="merch-tag">${esc(t('f1.merchCell'))}</span>` : ''}</td></tr>`;
     });
     $('#rows').innerHTML = rows.length ? html : `<tr><td colspan="4" class="board-empty">${esc(t('board.empty'))}</td></tr>`;
-    $('#board-note').textContent = data.final ? t('board.noteFinal') : t('f1.boardPending', { n: data.leaderboard.prizes.length, pool: L.money(data.leaderboard.pool) });
+    $('#board-note').textContent = data.final ? t('f1.boardFinalMerch') : t('f1.boardPendingMerch');
     const more = $('#more');
     more.hidden = !hidden && !showAll;
     more.textContent = showAll ? t('board.showTop') : t('board.showFull');

@@ -484,7 +484,8 @@ const F1 = {
   homeUntil: process.env.F1_HOME_UNTIL || '2026-11-24T11:00:00Z', // Tuesday 6 AM Eastern: the homepage goes back to the NHL
   // Points: right driver in the right spot = 3, right driver on the podium but in another spot = 1. Max 9.
   exact: 3, onPodium: 1,
-  prizes: [150, 100, 70, 50, 40, 30, 22, 16, 12, 10]
+  prizes: [],      // no cash for this race: 1st place wins an Alex Tagliani merch pack
+  merch: 'Alex Tagliani merch pack'
 };
 F1.pool = F1.prizes.reduce((a, b) => a + b, 0);
 const F1_MOCK_FILE = process.env.F1_MOCK_FILE ? path.resolve(process.env.F1_MOCK_FILE) : null;
@@ -602,7 +603,7 @@ async function handleF1State(req, res) {
     drivers: snap.feed.drivers, podium: snap.podium, points: { exact: F1.exact, onPodium: F1.onPodium },
     expert: contest.expert.length === 3 ? contest.expert : null, intro: contest.intro || '',
     split, entries: contest.entries.length,
-    leaderboard: { rows: snap.rows, prizes: F1.prizes, pool: F1.pool },
+    leaderboard: { rows: snap.rows, prizes: F1.prizes, pool: F1.pool, merch: true },
     recent: [...contest.entries].sort((a, b) => (b.updated || 0) - (a.updated || 0)).slice(0, 8)
       .map(e => ({ name: e.username, at: e.updated || e.created, edited: (e.updated || 0) - (e.created || 0) > 1000 })),
     me: me ? { username: me.username, picks: me.picks, email: me.email || '', optIn: !!me.optIn, score: scorePodium(me.picks, snap.podium) } : null

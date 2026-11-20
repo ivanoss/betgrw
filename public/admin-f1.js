@@ -84,7 +84,7 @@
         <td><input type="checkbox" data-name="${esc(e.username)}" ${selected.has(e.username) ? 'checked' : ''} aria-label="Select ${esc(e.username)}"></td>
         <td>${pod && e.rank ? e.rank : ''}</td><td>${esc(e.username)}</td><td>${esc(e.email)}${e.optIn ? ' ✓' : ''}</td>
         ${(e.picks || []).map(cell).join('')}
-        <td class="num">${pod ? e.score : ''}</td><td class="num">${pod ? money(e.prize) : ''}</td>
+        <td class="num">${pod ? e.score : ''}</td><td class="num">${pod && e.rank === 1 ? 'Merch pack' : ''}</td>
         <td>${e.net ? `<span class="net-id">${esc(e.net)}</span>${shared ? ` ×${nets[e.net]}` : ''}` : ''}</td>
         <td>${e.created ? esc(timeFmt.format(new Date(e.created))) : ''}</td></tr>`;
     }).join('') || '<tr><td colspan="11" class="board-empty">No entries yet.</td></tr>';
@@ -131,7 +131,7 @@
     const lines = [['Place', 'Username', 'Email', 'Marketing opt-in', '1st', '2nd', '3rd', 'Points', 'Prize', 'Connection', 'Entered'].map(q).join(',')];
     [...state.entries].sort((a, b) => b.score - a.score).forEach(e => lines.push([
       state.podium ? e.rank : '', e.username, e.email, e.optIn ? 'yes' : 'no', ...(e.picks || []).map(name),
-      state.podium ? e.score : '', state.podium && e.prize ? e.prize.toFixed(2) : '', e.net, e.created ? new Date(e.created).toISOString() : ''
+      state.podium ? e.score : '', state.podium && e.rank === 1 ? 'Alex Tagliani merch pack' : '', e.net, e.created ? new Date(e.created).toISOString() : ''
     ].map(q).join(',')));
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }));

@@ -146,3 +146,12 @@
 .pod.mine .pod-btn > span { grid-area: auto; }
 .f1-step + .pod.mine { padding-top: 12px; border-top: 0; }
 .entry-form.after-grid { border-top: 1px solid var(--line); }
+
+/* Merch prize banner */
+.merch-face { flex: none; width: 52px; height: 52px; border-radius: 50%; object-fit: cover; object-position: center 20%; background: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.35); }
+.merch-tag { display: inline-block; font: 700 12px/1 var(--num); letter-spacing: .04em; text-transform: uppercase; padding: 4px 7px; border-radius: 3px; background: #FFF4D6; color: #8A5A00; }
+
+/* Merch prize banner */
+.merch-amount { display: flex; align-items: center; gap: 12px; }
+.merch-face { flex: none; width: 52px; height: 52px; border-radius: 50%; object-fit: cover; object-position: center 20%; background: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.35); }
+.merch-tag { display: inline-block; font: 700 12px/1 var(--num); letter-spacing: .04em; text-transform: uppercase; padding: 4px 7px; border-radius: 3px; background: #FFF4D6; color: #8A5A00; }
