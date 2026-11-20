@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title data-i18n="f1.docTitle">Battez Tagliani | Grand Prix de Las Vegas</title>
+<meta name="description" content="Alex Tagliani choisit le podium du Grand Prix de Las Vegas. Faites vos choix et finissez devant lui.">
+<meta name="theme-color" content="#0A1128">
+<meta property="og:image" content="/apple-touch-icon.png">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap">
+<link rel="stylesheet" href="styles.css?v=__V__">
+<link rel="stylesheet" href="f1.css?v=__V__">
+</head>
+<body class="f1-page">
+<a class="skip" href="#picks" data-i18n="skip">Aller à vos choix</a>
+
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a class="logo" href="/"><img src="logo.png" alt="BetGRW" width="140" height="34"></a>
+    <nav class="hnav" aria-label="Sections" data-i18n-aria="nav.aria">
+      <a href="#tagliani" class="on">Tagliani</a>
+      <a href="#picks" data-i18n="nav.picks">Choix</a>
+      <a href="#board" data-i18n="nav.board">Classement</a>
+      <a href="#rules" data-i18n="nav.rules">Règlements</a>
+      <a href="/nhl" data-i18n="f1.navNhl">LNH</a>
+    </nav>
+    <div class="hdr-right">
+      <span class="hdr-pill" id="hdr-pill" hidden></span>
+      <a class="lang-sw" id="lang-switch" href="?lang=en" lang="en">EN</a>
+      <a class="hdr-me" id="hdr-me" href="#picks" data-i18n="hdr.make">Faites vos choix</a>
+      <a class="hdr-cta" href="https://betgrw.com" target="_blank" rel="noopener" data-i18n="hdr.deposit">Déposer</a>
+    </div>
+  </div>
+</header>
+
+<!-- Race header -->
+<section class="hub f1-hub" aria-labelledby="hub-h">
+  <div class="wrap hub-in">
+    <div class="hub-id">
+      <span class="f1-badge" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6 29V4" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><rect x="7" y="4" width="20" height="14" fill="#fff"/><g fill="#0A1128"><rect x="7" y="4" width="5" height="3.5"/><rect x="17" y="4" width="5" height="3.5"/><rect x="12" y="7.5" width="5" height="3.5"/><rect x="22" y="7.5" width="5" height="3.5"/><rect x="7" y="11" width="5" height="3.5"/><rect x="17" y="11" width="5" height="3.5"/><rect x="12" y="14.5" width="5" height="3.5"/><rect x="22" y="14.5" width="5" height="3.5"/></g></svg><b>LV</b></span>
+      <div>
+        <h1 id="hub-h" data-i18n="f1.title">Battez Tagliani</h1>
+        <p class="hub-meta" data-i18n="f1.sub">Grand Prix de Las Vegas · Formule 1</p>
+      </div>
+    </div>
+    <dl class="hub-facts">
+      <div><dt data-i18n="hub.date">Date</dt><dd id="date-label">–</dd></div>
+      <div><dt data-i18n="f1.lights">Départ</dt><dd id="start-label">–</dd></div>
+      <div><dt id="lock-label" data-i18n="hub.lockIn">Fermeture</dt><dd id="lockline">–</dd></div>
+    </dl>
+    <div class="hub-duel" aria-live="polite">
+      <div class="hd-side"><img class="gphoto sm" src="tagliani.jpg?v=__V__" alt="" width="30" height="30"><span class="hd-name">Tagliani</span><span class="hd-num" id="sb-expert">–</span></div>
+      <span class="hd-sep">:</span>
+      <div class="hd-side you"><span class="hd-num" id="sb-you">–</span><span class="hd-name" id="sb-you-label" data-i18n="duel.you">Vous</span></div>
+    </div>
+  </div>
+  <div class="wrap"><p class="hub-status" id="sb-strip" data-i18n="f1.loading">Chargement de la course</p></div>
+</section>
+
+<!-- Prize -->
+<div class="wrap">
+  <section class="prize" aria-label="Prix" data-i18n-aria="prize.aria">
+    <div class="prize-top">
+      <div class="prize-amount">
+        <span class="prize-num" id="pool">500 $</span>
+        <span class="prize-sub" data-i18n="f1.prizeSub">pour cette course</span>
+      </div>
+      <h2 class="prize-head" id="prize-h">–</h2>
+      <a class="prize-cta" href="https://betgrw.com" target="_blank" rel="noopener" data-i18n="prize.cta">Déposer sur betgrw.com</a>
+    </div>
+    <ol class="payouts" id="payouts" aria-label="Prix par position" data-i18n-aria="prize.weeklyAria"></ol>
+    <p class="prize-rule">
+      <svg class="prize-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7v4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="4.6" r="1" fill="currentColor"/></svg>
+      <span data-i18n-html="prize.rule">Pour être admissible, vous devez avoir déposé au moins <b>20 $</b> sur betgrw.com au cours des <b>30 derniers jours</b>.</span>
+    </p>
+  </section>
+</div>
+
+<div class="wrap page">
+  <main class="main-col">
+
+    <!-- Official result (after the race) -->
+    <section class="block f1-result" id="result" aria-labelledby="result-h" hidden>
+      <header class="block-head"><h2 id="result-h" data-i18n="f1.resultTitle">Podium officiel</h2></header>
+      <ol class="pod" id="result-pod"></ol>
+    </section>
+
+    <!-- Tagliani -->
+    <section class="block expert" id="tagliani" aria-labelledby="tagliani-h">
+      <div class="expert-head">
+        <img class="gphoto" src="tagliani.jpg?v=__V__" alt="Alex Tagliani" width="64" height="64">
+        <div class="expert-id">
+          <h2 id="tagliani-h">Alex Tagliani</h2>
+          <p data-i18n="f1.bio">Pilote québécois et ambassadeur BetGRW. Son podium pour Las Vegas.</p>
+        </div>
+      </div>
+      <blockquote class="expert-take" id="x-intro" hidden></blockquote>
+      <ol class="pod" id="x-pod"></ol>
+    </section>
+
+    <!-- Your picks -->
+    <section class="block picks" id="picks" aria-labelledby="picks-h">
+      <header class="block-head">
+        <h2 id="picks-h" data-i18n="picks.title">Vos choix</h2>
+        <span class="block-aside" id="progress-text"></span>
+      </header>
+      <p class="block-sub" id="lock-sub" data-i18n="f1.howTo">Choisissez le gagnant, le 2e et le 3e.</p>
+
+      <div class="entry-form">
+        <div class="field">
+          <label for="username" data-i18n="form.username">Nom d’utilisateur BetGRW</label>
+          <input id="username" name="username" type="text" maxlength="20" autocomplete="nickname" spellcheck="false" placeholder="ex. HabsFan_514" data-i18n-ph="form.usernamePh" aria-describedby="username-help">
+          <p id="username-help" class="help" data-i18n="form.usernameHelp">Votre nom d’utilisateur betgrw.com. Il s’affiche au classement.</p>
+        </div>
+        <div class="field">
+          <label for="email" data-i18n="form.email">Courriel</label>
+          <input id="email" name="email" type="email" maxlength="254" autocomplete="email" spellcheck="false" placeholder="vous@exemple.com" data-i18n-ph="form.emailPh" aria-describedby="email-help">
+          <p id="email-help" class="help" data-i18n="form.emailHelp">Nous l’utilisons pour vous joindre si vous gagnez. Il n’est jamais affiché sur le site.</p>
+        </div>
+        <label class="consent">
+          <input id="optin" type="checkbox">
+          <span data-i18n="f1.consent">Envoyez-moi un rappel et les nouvelles et les offres de BetGRW.</span>
+        </label>
+        <div class="trap" aria-hidden="true"><label for="website" data-i18n="form.trap">Laissez ce champ vide</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+      </div>
+
+      <ol class="pod mine" id="my-pod" aria-label="Votre podium" data-i18n-aria="f1.myPod"></ol>
+
+      <div class="day-head f1-head">
+        <span data-i18n="f1.driver">Pilote</span>
+        <span class="dh-col" data-i18n="f1.place">Position</span>
+      </div>
+      <ol class="mlist dlist" id="drivers"></ol>
+
+      <div class="submit-bar">
+        <div class="sb-progress">
+          <span class="sb-agree" id="agree"></span>
+          <div class="bar" aria-hidden="true"><div id="progress-fill"></div></div>
+        </div>
+        <button class="submit" id="submit" type="button" disabled data-i18n="btn.submit">Soumettre mes choix</button>
+      </div>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <details class="block rules" id="rules">
+      <summary data-i18n="rules.title">Comment ça marche</summary>
+      <ul data-i18n-list="f1.rules"></ul>
+    </details>
+  </main>
+
+  <aside class="side-col">
+    <section class="block board" id="board" aria-labelledby="board-h">
+      <header class="block-head">
+        <h2 id="board-h" data-i18n="board.title">Classement</h2>
+        <span class="block-aside" id="board-sub"></span>
+      </header>
+      <table id="board-t">
+        <thead><tr><th scope="col">#</th><th scope="col" data-i18n="th.player">Joueur</th><th scope="col" class="num" data-i18n="th.pts">Pts</th><th scope="col" class="num prize-col" data-i18n="th.prize">Prix</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <button class="more" id="more" type="button" hidden></button>
+      <p class="board-note" id="board-note"></p>
+    </section>
+
+    <section class="block f1-points" aria-labelledby="pts-h">
+      <header class="block-head"><h2 id="pts-h" data-i18n="f1.ptsTitle">Pointage</h2></header>
+      <ul>
+        <li><b>3</b><span data-i18n="f1.ptsExact">Bon pilote à la bonne position</span></li>
+        <li><b>1</b><span data-i18n="f1.ptsPodium">Bon pilote sur le podium, mais à une autre position</span></li>
+        <li><b>9</b><span data-i18n="f1.ptsMax">Maximum : le podium exact</span></li>
+      </ul>
+    </section>
+
+    <section class="block facts" aria-label="La course en chiffres" data-i18n-aria="f1.factsAria">
+      <div class="fact"><span id="f-players">0</span><small data-i18n="facts.players">joueurs inscrits</small></div>
+      <div class="fact"><span id="f-fav">–</span><small data-i18n="f1.fav">favori des joueurs</small></div>
+      <div class="fact"><span id="f-beat">0</span><small data-i18n="f1.ahead">devant Tagliani</small></div>
+    </section>
+
+    <section class="block feed" aria-labelledby="feed-h">
+      <header class="block-head"><h2 id="feed-h" data-i18n="feed.title">Dernières inscriptions</h2></header>
+      <ol class="feed-list" id="feed"></ol>
+    </section>
+
+    <a class="block nhl-link" href="/nhl">
+      <span data-i18n="f1.nhlLinkSub">Le concours LNH continue</span>
+      <b data-i18n="f1.nhlLink">Battez Georges : choix LNH du samedi →</b>
+    </a>
+  </aside>
+</div>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <img src="logo.png" alt="BetGRW" width="99" height="24">
+    <p data-i18n="f1.foot">18+. Jouez de façon responsable. BetGRW n’est pas affilié à la Formule 1.</p>
+  </div>
+</footer>
+
+<script src="i18n.js?v=__V__"></script>
+<script src="f1.js?v=__V__"></script>
+</body>
+</html>

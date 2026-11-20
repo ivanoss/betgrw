@@ -96,3 +96,11 @@ Any Node host works. Settings:
 - The site is in French by default. The **EN / FR** button in the header switches language, and the choice is remembered on that device.
 - Link straight to English with `?lang=en` (e.g. `betgrw.net/?lang=en`).
 - All public text lives in `public/i18n.js` (an `en` and an `fr` list). Change wording there. The admin page stays in English.
+
+## F1: Beat Tagliani (Las Vegas Grand Prix, Nov 21, 2026)
+- Players pick the podium (winner, 2nd, 3rd). 3 points for the right driver in the right place, 1 point for a driver on the podium in another place (max 9). Top 10 split $500 (`F1.prizes` in `server.js`).
+- **Homepage:** the F1 page is the homepage until Tuesday Nov 24, 6 AM Eastern, then the NHL site comes back on its own. The NHL site is always at `/nhl`, the F1 page at `/f1`. Switch it by hand in `/admin/f1` → **Homepage shows**.
+- **`/admin/f1`:** Tagliani's podium and take, the official result, players' picks with CSV download.
+- Drivers and the result come from the free Jolpica F1 feed (api.jolpi.ca). If it's down, the built-in 2026 grid is used, and you can type the official podium in `/admin/f1` (it overrides the feed).
+- Tagliani's photo: add `public/tagliani.jpg` (square, about 400×400). Until then a silhouette shows.
+- The F1 race doesn't count toward the NHL season. Usernames are shared with the NHL contest, so nobody can take a regular's name.

@@ -37,6 +37,13 @@ const file = path.join(__dirname, '..', 'sample', 'demo-score.json');
 fs.mkdirSync(path.dirname(file), { recursive: true });
 fs.writeFileSync(file, JSON.stringify({ currentDate: date, games }, null, 2));
 process.env.MOCK_FILE = file;
+// F1 Las Vegas sample: before the race, or (live mode) race over with a podium
+const f1File = path.join(__dirname, '..', 'sample', 'demo-f1.json');
+const realStart = Date.parse('2026-11-22T04:00:00Z');
+fs.writeFileSync(f1File, JSON.stringify(live
+  ? { start: new Date(now - 2 * 3600e3).toISOString(), podium: ['max_verstappen', 'antonelli', 'norris'] }
+  : { start: new Date(realStart > now ? realStart : now + 26 * 3600e3).toISOString() }, null, 2));
+process.env.F1_MOCK_FILE = f1File;
 process.env.DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'sample', 'data');
 if (!process.env.ADMIN_PASSWORD) process.env.ADMIN_PASSWORD = 'demo';
 console.log(`Sample games written (${mode}). Admin password for the demo: ${process.env.ADMIN_PASSWORD}`);

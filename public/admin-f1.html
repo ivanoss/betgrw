@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>F1 admin | Beat Tagliani</title>
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/admin.css?v=__V__">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/"><img src="/logo.png" alt="BetGRW" width="124" height="30"></a>
+  <nav class="admin-links"><a href="/admin" class="back">NHL admin</a><a href="/f1" class="back">View the F1 page</a></nav>
+</header>
+<main>
+  <h1 class="admin-h">F1 Las Vegas</h1>
+
+  <form id="login" class="login">
+    <label for="pw">Admin password</label>
+    <input id="pw" type="password" autocomplete="current-password" required>
+    <button class="submit" type="submit">Sign in</button>
+    <p class="status" id="login-status" role="status"></p>
+  </form>
+
+  <div id="panel" hidden>
+    <section class="satbar" aria-label="Homepage">
+      <label for="home">Homepage shows</label>
+      <select id="home">
+        <option value="auto">Automatic</option>
+        <option value="f1">F1 Las Vegas</option>
+        <option value="nhl">NHL Pick’em</option>
+      </select>
+      <span class="sat-tag" id="home-tag"></span>
+      <p class="sat-note" id="home-note"></p>
+    </section>
+
+    <section class="block">
+      <div class="block-head">
+        <h2>Tagliani’s podium</h2>
+        <p class="block-sub" id="race-info"></p>
+      </div>
+      <label class="intro-label" for="intro">Tagliani’s take <span>(optional, shows above his podium)</span></label>
+      <textarea id="intro" maxlength="400" rows="3" placeholder="e.g. Long straights, cold tires: I like Verstappen here."></textarea>
+      <div class="f1-selects" id="x-selects"></div>
+      <div class="admin-actions">
+        <button class="submit" id="save-picks" type="button">Save Tagliani’s podium</button>
+        <p class="status" id="picks-status" role="status"></p>
+      </div>
+    </section>
+
+    <div class="line blue" aria-hidden="true"></div>
+
+    <section class="block">
+      <div class="block-head">
+        <h2>Official result</h2>
+        <p class="block-sub" id="result-info"></p>
+      </div>
+      <div class="f1-selects" id="r-selects"></div>
+      <div class="admin-actions">
+        <button class="submit" id="save-result" type="button">Save official podium</button>
+        <button class="text-btn" id="clear-result" type="button">Use the automatic result</button>
+        <p class="status" id="result-status" role="status"></p>
+      </div>
+    </section>
+
+    <div class="line blue" aria-hidden="true"></div>
+
+    <section class="block">
+      <div class="block-head">
+        <h2>Players’ picks</h2>
+        <p class="block-sub">Best score first once the race is over. Prize shows what each player wins before checking eligibility. Entries from the same internet connection are highlighted in orange.</p>
+      </div>
+      <div class="grid-tools">
+        <label for="find" class="sr">Find a player</label>
+        <input id="find" type="search" placeholder="Find a player" autocomplete="off">
+        <span class="grid-count" id="grid-count"></span>
+        <button class="remove-sel" id="remove-sel" type="button" disabled>Remove selected</button>
+        <button class="text-btn" id="csv" type="button">Download F1 entries (CSV)</button>
+      </div>
+      <div class="grid-wrap">
+        <table class="grid">
+          <thead><tr><th><span class="sr">Select</span></th><th>#</th><th>Player</th><th>Email</th><th>1st</th><th>2nd</th><th>3rd</th><th class="num">Pts</th><th class="num">Prize</th><th>Connection</th><th>Entered</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="status" id="rows-status" role="status"></p>
+    </section>
+  </div>
+</main>
+<style>
+  .f1-selects { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+  .f1-selects label { display: grid; gap: 4px; font-weight: 600; font-size: 14px; }
+  .f1-selects select { font: inherit; padding: 9px 10px; border: 1px solid var(--boards); border-radius: 4px; background: #fff; }
+  .grid td.hit { color: #0A8A3F; font-weight: 700; }
+  .grid td.close { color: #9A6B00; font-weight: 700; }
+  .grid td.miss { color: #D7263D; }
+  .grid tr.shared td { background: #FFF4E5; }
+  @media (max-width: 640px) { .f1-selects { grid-template-columns: 1fr; } }
+</style>
+<script src="/admin-f1.js?v=__V__"></script>
+</body>
+</html>

@@ -523,3 +523,5 @@ tr.gap td { padding: 0 var(--pad); color: var(--ink-3); line-height: 1.2; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   html { scroll-behavior: auto; }
 }
+.hnav a.nav-f1 { color: #fff; font-weight: 700; }
+.hnav a.nav-f1::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--red); margin-right: 7px; }

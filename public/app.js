@@ -37,6 +37,7 @@
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || t('hub.loadFail'));
       data = json;
+      $('#nav-f1').hidden = !data.f1;
       syncDraft();
       render();
     } catch (err) {

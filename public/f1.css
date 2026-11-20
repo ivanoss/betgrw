@@ -1,0 +1,80 @@
+/* Beat Tagliani: F1 Las Vegas page. Builds on styles.css. */
+.f1-badge {
+  flex: none; width: 56px; height: 56px; border-radius: 10px; background: var(--nav); color: #fff;
+  display: grid; place-items: center; align-content: center; gap: 3px; box-shadow: inset 0 -4px 0 var(--red);
+}
+.f1-badge svg { width: 28px; height: 28px; }
+.f1-hub .hub-in { padding-top: 18px; }
+.f1-badge b { font: 700 10px/1 var(--num); letter-spacing: .12em; color: #8FB1FF; }
+
+/* Podium: three cells, 1st in the middle on wide screens */
+.pod { list-style: none; margin: 0; padding: 0 var(--pad) 16px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.pod li {
+  position: relative; display: grid; align-content: start; gap: 2px; min-width: 0; padding: 10px 12px 10px 15px;
+  background: #F3F5F8; border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
+}
+.pod li::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--team); }
+.pod .pod-pos { font: 700 12px/1 var(--num); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.pod .p1 .pod-pos { color: #B07A00; }
+.pod .pod-name { font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pod .pod-name.empty { font-weight: 400; color: var(--ink-3); }
+.pod .pod-first { font-weight: 400; }
+.pod .pod-team { font-size: 12px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pod .pod-mark { position: absolute; right: 10px; top: 9px; font: 700 13px/1 var(--num); }
+.pod li.hit { background: var(--green-bg); border-color: #A6E3BF; }
+.pod li.hit .pod-mark { color: var(--green); }
+.pod li.close { background: #FFF5DD; border-color: #F1D58C; }
+.pod li.close .pod-mark { color: #9A6B00; }
+.pod li.miss .pod-name { color: var(--ink-3); text-decoration: line-through; }
+.pod li.miss .pod-mark { color: var(--red); }
+.pod .pod-x {
+  position: absolute; right: 6px; top: 6px; width: 24px; height: 24px; border: 0; border-radius: 50%;
+  background: transparent; color: var(--ink-3); font-size: 18px; line-height: 1;
+}
+.pod .pod-x:hover { background: var(--line); color: var(--ink); }
+.pod.waiting { grid-template-columns: 1fr; }
+.pod .pod-wait { background: none; border: 0; padding: 0; color: var(--ink-2); }
+.pod .pod-wait::before { display: none; }
+.pod.mine { padding-top: 14px; border-top: 1px solid var(--line); }
+.f1-result .pod li { background: #fff; }
+.f1-result { box-shadow: inset 0 3px 0 var(--accent); }
+
+/* Driver list */
+.f1-head, .drow { grid-template-columns: minmax(0, 1fr) 200px; }
+.f1-head .dh-col { text-align: center; }
+.dname { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.tbar { flex: none; width: 4px; height: 30px; border-radius: 2px; background: var(--team); }
+.dtext { min-width: 0; display: grid; font-size: 14px; }
+.dtext b { font-weight: 700; }
+.dtext .dfirst { color: var(--ink-2); }
+.dtext small { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dfin { margin-left: auto; flex: none; font: 700 12px/1 var(--num); padding: 4px 7px; border-radius: 3px; background: var(--nav); color: #fff; }
+.drow.on-pod { background: #FAFCFF; }
+.mbtns.three { grid-template-columns: repeat(3, 1fr); }
+.mbtns.three .odd { padding: 8px 4px; }
+.mbtns.three .odd b { font-size: 14px; }
+.odd.near { background: #FFF5DD; border-color: #E2B33C; color: #7A5400; }
+
+/* Sidebar */
+.f1-points ul { list-style: none; margin: 0; padding: 0 var(--pad) 14px; display: grid; gap: 8px; }
+.f1-points li { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: center; font-size: 13px; color: var(--ink-2); }
+.f1-points b { display: grid; place-items: center; height: 30px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); font: 700 16px/1 var(--num); }
+.nhl-link { display: grid; gap: 2px; padding: 14px var(--pad); text-decoration: none; background: var(--nav); color: #fff; }
+.nhl-link span { font-size: 12px; color: #AEBBDD; }
+.nhl-link b { font-size: 15px; }
+.nhl-link:hover b { text-decoration: underline; }
+
+@media (max-width: 680px) {
+  .f1-badge { width: 48px; height: 48px; }
+  .f1-badge svg { width: 24px; height: 24px; }
+  .pod { grid-template-columns: 1fr; gap: 6px; }
+  .pod li { grid-template-columns: 34px minmax(0, 1fr) auto; grid-template-areas: 'pos name mark' 'pos team mark'; align-items: center; column-gap: 8px; padding: 8px 12px 8px 14px; }
+  .pod .pod-pos { grid-area: pos; }
+  .pod .pod-name { grid-area: name; }
+  .pod .pod-team { grid-area: team; }
+  .pod .pod-mark { grid-area: mark; position: static; }
+  .pod .pod-x { position: static; grid-area: mark; }
+  .f1-head, .drow { grid-template-columns: minmax(0, 1fr) 150px; }
+  .dtext .dfirst { display: none; }
+}
