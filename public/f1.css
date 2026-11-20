@@ -186,7 +186,7 @@
 .order li.miss .or-name b { color: var(--ink-2); }
 .order.mine { padding-top: 6px; }
 .order-tools { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 6px var(--pad) 0; }
-.order-tools .text-btn { background: none; border: 0; padding: 6px 0; color: var(--accent); font-weight: 700; font-size: 13px; text-decoration: underline; }
+.order-tools .text-btn { background: none; border: 0; padding: 12px 0; min-height: 44px; color: var(--accent); font-weight: 700; font-size: 13px; text-decoration: underline; }
 .order-tools .text-btn:last-child { color: var(--ink-2); }
 .step-pts { margin-left: auto; font-size: 12px; font-weight: 700; padding: 3px 7px; border-radius: 3px; background: #FFE9A8; color: #6B4A00; }
 .full-order { margin: 0 var(--pad) 16px; border: 1px solid var(--line); border-radius: 6px; }
@@ -199,3 +199,6 @@
   .or-tools button { width: 34px; height: 34px; }
   .or-real { font-size: 11px; }
 }
+.pod li.pod-wait { display: block; grid-column: 1 / -1; }
+/* Let the "tap your Nth" bar stay at the top of the screen while scrolling the driver list */
+.f1-page #picks { overflow: visible; }

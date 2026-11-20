@@ -54,7 +54,7 @@ h1, h2 { margin: 0; }
 .hdr-in { height: 100%; display: flex; align-items: center; gap: 30px; }
 .logo { display: flex; flex: none; }
 .logo img { display: block; height: 34px; width: auto; }
-.hnav { display: flex; align-items: stretch; height: 100%; gap: 2px; }
+.hnav { display: flex; align-items: stretch; height: 100%; gap: 2px; min-width: 0; }
 .hnav a {
   position: relative; display: flex; align-items: center; padding: 0 13px; white-space: nowrap;
   text-decoration: none; font-weight: 500; font-size: 15px; color: #AEBBDD; transition: color .15s;
@@ -415,6 +415,28 @@ tr.gap td { padding: 0 var(--pad); color: var(--ink-3); line-height: 1.2; }
 .foot p { margin: 0; }
 
 /* ---------- Tablet ---------- */
+/* Laptops: tighter menu so it fits on one line with the language switch */
+@media (max-width: 1340px) {
+  .hdr-in { gap: 20px; }
+  .hdr-pill { display: none; }
+  .hnav a { padding: 0 10px; font-size: 14.5px; }
+  .hnav a::after { left: 10px; right: 10px; }
+}
+/* Tablets and phones: logo and buttons on one line, menu on its own scrollable line below */
+@media (max-width: 1060px) {
+  .hdr { height: auto; }
+  .hdr-in { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 10px; height: auto; }
+  .hdr-in > .logo { height: 60px; align-items: center; }
+  .hdr-right { height: 60px; flex-wrap: nowrap; justify-content: flex-end; }
+  .hnav { order: 3; grid-column: 1 / -1; min-width: 0; width: calc(100% + 2 * var(--gutter, 16px)); margin: 0 calc(-1 * var(--gutter, 16px)); height: 44px; padding: 0 4px; overflow-x: auto; scrollbar-width: none; border-top: 1px solid rgba(255,255,255,.07); }
+  .hnav::-webkit-scrollbar { display: none; }
+  .hnav a { flex: none; font-size: 14px; padding: 0 11px; }
+  .hnav a::after { left: 11px; right: 11px; }
+}
+@media (max-width: 680px) {
+  .hdr-in > .logo, .hdr-right { height: 54px; }
+  .lang-sw { width: 32px; height: 32px; font-size: 12px; }
+}
 @media (max-width: 1240px) {
   .hdr-pill { display: none; }
 }
@@ -476,11 +498,6 @@ tr.gap td { padding: 0 var(--pad); color: var(--ink-3); line-height: 1.2; }
   .entry-form { grid-template-columns: 1fr; }
   .day-head { grid-template-columns: minmax(0, 1fr) 132px 56px; padding-top: 7px; padding-bottom: 7px; }
   .mrow { grid-template-columns: minmax(0, 1fr) 132px 56px; gap: 8px 10px; padding-top: 9px; padding-bottom: 9px; }
-  .hdr { height: auto; }
-  /* Phone header: logo and buttons on one line that never wraps, menu on its own line below */
-  .hdr-in { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 10px; height: auto; }
-  .hdr-right { flex-wrap: nowrap; justify-content: flex-end; }
-  .lang-sw { width: 32px; height: 32px; font-size: 12px; }
   .hdr-in > .logo { height: 54px; align-items: center; }
   .logo img { height: 28px; }
   .hdr-right { height: 54px; gap: 8px; }
@@ -493,11 +510,8 @@ tr.gap td { padding: 0 var(--pad); color: var(--ink-3); line-height: 1.2; }
   .hdr-me .nm { display: none; }
   .hdr-me { padding-right: 10px; }
   .hdr-pill { display: none; }
-  .hnav { order: 3; grid-column: 1 / -1; width: calc(100% + 20px); margin: 0 -10px; height: 42px; padding: 0 4px; overflow-x: auto; scrollbar-width: none; border-top: 1px solid rgba(255,255,255,.07); }
-  .hnav::-webkit-scrollbar { display: none; }
-  .hnav a { flex: none; font-size: 14px; padding: 0 11px; }
-  .hnav a::after { left: 11px; right: 11px; }
   .wrap { padding: 0 10px; }
+  :root { --gutter: 10px; }
   .chip { width: 100px; }
   h1 { font-size: 24px; }
   .page { gap: 10px; padding-top: 10px; }
