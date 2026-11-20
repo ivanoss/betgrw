@@ -9,7 +9,7 @@
   const L = window.I18N, t = L.t, LOCALE = L.LOCALE;
 
   let data = null;
-  let draft = [null, null, null];   // driver ids for 1st, 2nd, 3rd
+  let draft = [];   // driver ids in the order you think they'll finish, 1st first
   let draftLoaded = false;
   let saving = false, showAll = false, pollTimer = null;
 
@@ -58,8 +58,8 @@
   function syncDraft() {
     if (!draftLoaded) {
       draftLoaded = true;
-      try { draft = JSON.parse(store.get('bg_f1_draft')) || draft; } catch { /* keep empty */ }
-      if (data.me && !draft.some(Boolean)) draft = [...data.me.picks];
+      try { draft = JSON.parse(store.get('bg_f1_order')) || []; } catch { draft = []; }
+      if (data.me && (!Array.isArray(draft) || !draft.length)) draft = [...data.me.picks];
       const name = data.me ? data.me.username : store.get('bg_username');
       if (name && !$('#username').value) $('#username').value = name;
       const mail = data.me ? data.me.email : store.get('bg_email');
@@ -67,9 +67,11 @@
       $('#optin').checked = data.me ? !!data.me.optIn : store.get('bg_optin') === '1';
     }
     const ids = new Set(data.drivers.map(d => d.id));
-    draft = [0, 1, 2].map(i => (ids.has(draft[i]) ? draft[i] : null));
+    draft = (Array.isArray(draft) ? draft : []).filter((id, i, a) => ids.has(id) && a.indexOf(id) === i);
   }
-  const saveDraft = () => store.set('bg_f1_draft', JSON.stringify(draft));
+  const saveDraft = () => store.set('bg_f1_order', JSON.stringify(draft));
+  const N = () => data.drivers.length;
+  const ptsAt = i => (i < data.points.topN ? data.points.top : data.points.rest);
   const driver = id => data.drivers.find(d => d.id === id);
   const fullName = d => d ? `${d.first} ${d.last}` : '';
   const expertRow = () => data.leaderboard.rows.find(r => r.expert);
@@ -127,6 +129,7 @@
   }
 
   function renderPrize() {
+    $('#pts-max').textContent = data.points.topN * data.points.top + (N() - data.points.topN) * data.points.rest;
     const lb = data.leaderboard;
     // Prize for this race: an Alex Tagliani merch pack for 1st place (no cash)
     $('#pool').textContent = t('f1.merchBig');
@@ -134,66 +137,79 @@
     $('#payouts').hidden = true;
   }
 
-  // One podium: three cells. `against` is the official podium, to mark right and wrong.
-  function pod(ids, against, opts = {}) {
+  // Top 3 of a finishing order, as three cells. `against` is the official order, to mark right and wrong.
+  function pod(ids, against) {
     return [0, 1, 2].map(i => {
       const d = driver(ids && ids[i]);
       let cls = '', mark = '';
-      if (d && against) {
-        if (against[i] === d.id) { cls = 'hit'; mark = `+${data.points.exact}`; }
-        else if (against.includes(d.id)) { cls = 'close'; mark = `+${data.points.onPodium}`; }
-        else { cls = 'miss'; mark = '0'; }
-      }
+      if (d && against) { if (against[i] === d.id) { cls = 'hit'; mark = `+${ptsAt(i)}`; } else { cls = 'miss'; mark = '0'; } }
       const body = d
         ? `<span class="pod-name"><span class="pod-first">${esc(d.first)} </span>${esc(d.last)}</span><span class="pod-team">${esc(d.team || '')}</span>`
-        : `<span class="pod-name empty">${esc(opts.empty || '–')}</span>`;
-      const btn = opts.clear && d ? `<button type="button" class="pod-x" data-clear="${i}" aria-label="${esc(t('f1.clear', { place: PLACE(i) }))}">×</button>` : '';
+        : '<span class="pod-name empty">–</span>';
       return `<li class="p${i + 1} ${cls}" style="--team:${d ? teamColor(d.team) : 'transparent'}">
-        <span class="pod-pos">${PLACE(i)}</span>${body}${mark ? `<span class="pod-mark">${mark}</span>` : ''}${btn}</li>`;
+        <span class="pod-pos">${PLACE(i)}</span>${body}${mark ? `<span class="pod-mark">${mark}</span>` : ''}</li>`;
+    }).join('');
+  }
+
+  // A full finishing order as rows. With `against`, each row shows where the driver really finished and the points.
+  // With `edit`, rows get move up, move down and remove buttons.
+  function orderRows(ids, against, edit) {
+    return ids.map((id, i) => {
+      const d = driver(id);
+      if (!d) return '';
+      let cls = i < data.points.topN ? 'top3' : '', mark = '';
+      if (against) {
+        const real = against.indexOf(id);
+        if (real === i) { cls += ' hit'; mark = `<span class="or-pts">+${ptsAt(i)}</span>`; }
+        else { cls += ' miss'; mark = `<span class="or-real">${real >= 0 ? esc(t('f1.realPos', { place: PLACE(real) })) : '–'}</span>`; }
+      }
+      const tools = edit ? `<span class="or-tools">
+          <button type="button" data-move="up" data-i="${i}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(t('f1.up', { name: fullName(d) }))}">↑</button>
+          <button type="button" data-move="down" data-i="${i}" ${i === ids.length - 1 ? 'disabled' : ''} aria-label="${esc(t('f1.down', { name: fullName(d) }))}">↓</button>
+          <button type="button" data-move="out" data-i="${i}" aria-label="${esc(t('f1.remove', { name: fullName(d) }))}">×</button></span>` : '';
+      return `<li class="${cls}" style="--team:${teamColor(d.team)}">
+        <span class="or-pos">${PLACE(i)}</span><i class="tbar" aria-hidden="true"></i>
+        <span class="or-name"><span class="dfirst">${esc(d.first)} </span><b>${esc(d.last)}</b><small>${esc(d.team || '')}</small></span>
+        ${mark}${tools}</li>`;
     }).join('');
   }
 
   function renderResult() {
     $('#result').hidden = !data.final;
-    if (data.final) $('#result-pod').innerHTML = pod(data.podium, null);
+    if (!data.final) return;
+    $('#result-pod').innerHTML = pod(data.order, null);
+    $('#result-full').innerHTML = orderRows(data.order, null, false);
   }
 
   function renderExpert() {
-    $('#x-pod').innerHTML = data.expert ? pod(data.expert, data.final ? data.podium : null) : `<li class="pod-wait">${esc(t('f1.notYet'))}</li>`;
-    $('#x-pod').classList.toggle('waiting', !data.expert);
+    const x = data.expert;
+    $('#x-pod').innerHTML = x ? pod(x, data.final ? data.order : null) : `<li class="pod-wait">${esc(t('f1.notYet'))}</li>`;
+    $('#x-pod').classList.toggle('waiting', !x);
+    $('#x-more').hidden = !x;
+    if (x) $('#x-full').innerHTML = orderRows(x, data.final ? data.order : null, false);
     const intro = $('#x-intro');
     intro.hidden = !data.intro;
     intro.textContent = data.intro || '';
   }
 
-  // The spot the next driver tap fills: the one you tapped, otherwise the first empty one
-  let slot = null;
-  const activeSlot = () => (slot !== null ? slot : draft.indexOf(null));
-
   function renderMine() {
     const locked = data.locked;
+    const step = $('#step'), tools = $('#order-tools');
     if (locked) {
-      $('#my-pod').innerHTML = pod(data.me ? data.me.picks : [null, null, null], data.final ? data.podium : null, { empty: '–' });
-      $('#step').hidden = true;
+      step.hidden = true; tools.hidden = true;
+      $('#my-order').innerHTML = data.me ? orderRows(data.me.picks, data.final ? data.order : null, false) : '';
       return;
     }
-    const act = activeSlot();
-    $('#my-pod').innerHTML = [0, 1, 2].map(i => {
-      const d = driver(draft[i]);
-      return `<li class="p${i + 1} ${i === act ? 'active' : ''} ${d ? 'filled' : ''}" style="--team:${d ? teamColor(d.team) : 'transparent'}">
-        <button type="button" class="pod-btn" data-slot="${i}" aria-label="${esc(t('f1.slotAria', { place: PLACE(i) }))}">
-          <span class="pod-pos">${i === 0 ? esc(t('f1.winner')) : PLACE(i)}</span>
-          ${d ? `<span class="pod-name"><span class="pod-first">${esc(d.first)} </span>${esc(d.last)}</span><span class="pod-team">${esc(d.team || '')}</span>`
-              : `<span class="pod-name empty">${esc(i === act ? t('f1.tapDriver') : t('f1.choose'))}</span>`}
-        </button>
-        ${d ? `<button type="button" class="pod-x" data-clear="${i}" aria-label="${esc(t('f1.clear', { place: PLACE(i) }))}">×</button>` : ''}
-      </li>`;
-    }).join('');
-    const step = $('#step');
+    const n = draft.length, total = N();
+    $('#my-order').innerHTML = orderRows(draft, null, true)
+      + (n < total ? `<li class="next ${n < data.points.topN ? 'top3' : ''}"><span class="or-pos">${PLACE(n)}</span><span class="or-name">${esc(t('f1.tapNext'))}</span></li>` : '');
     step.hidden = false;
-    step.className = 'f1-step' + (act === -1 ? ' done' : '');
-    step.innerHTML = act === -1 ? esc(t('f1.stepDone'))
-      : `<b>${act + 1}</b>${esc(t(['f1.step1', 'f1.step2', 'f1.step3'][act]))}`;
+    step.className = 'f1-step' + (n === total ? ' done' : '');
+    step.innerHTML = n === total ? esc(t('f1.orderDone'))
+      : `<b>${n + 1}</b>${esc(t(n === 0 ? 'f1.tapWinner' : 'f1.tapPlace', { place: PLACE(n) }))}${n < data.points.topN ? `<span class="step-pts">${esc(t('f1.ptsEach', { n: data.points.top }))}</span>` : ''}`;
+    tools.hidden = false;
+    $('#fill-rest').hidden = n === total;
+    $('#clear-all').hidden = !n;
   }
 
   // Share of players who picked each driver to win, shown once you've entered (or picks are locked)
@@ -203,55 +219,47 @@
     return total ? id => Math.round((data.split[id] || 0) / total * 100) : null;
   }
 
+  // Drivers not placed yet. Tap one and he takes the next place.
   function renderDrivers() {
     const locked = data.locked;
     const share = winShare();
-    const finish = data.final ? data.podium : null;
-    $('#drivers').innerHTML = data.drivers.map(d => {
-      const mineAt = data.me ? data.me.picks.indexOf(d.id) : -1;
-      const sel = locked ? mineAt : draft.indexOf(d.id);
-      const fin = finish ? finish.indexOf(d.id) : -1;
-      let cls = 'dcard';
-      if (sel >= 0) cls += ' sel';
-      if (finish && mineAt >= 0) cls += finish[mineAt] === d.id ? ' right' : finish.includes(d.id) ? ' near' : ' wrong';
-      if (fin >= 0) cls += ' on-pod';
+    const left = locked ? [] : data.drivers.filter(d => !draft.includes(d.id));
+    $('#drivers').hidden = !left.length;
+    $('#drivers').innerHTML = left.map(d => {
       const pct = share ? share(d.id) : null;
-      return `<li><button type="button" class="${cls}" data-driver="${esc(d.id)}" aria-pressed="${sel >= 0}" ${locked ? 'disabled' : ''} style="--team:${teamColor(d.team)}"
-          aria-label="${esc(fullName(d) + (sel >= 0 ? ', ' + PLACE(sel) : ''))}">
+      return `<li><button type="button" class="dcard" data-driver="${esc(d.id)}" style="--team:${teamColor(d.team)}" aria-label="${esc(t('f1.placeAria', { name: fullName(d), place: PLACE(draft.length) }))}">
         <i class="tbar" aria-hidden="true"></i>
         <span class="dtext"><span class="dn"><span class="dfirst">${esc(d.first)} </span><b>${esc(d.last)}</b></span>
           <small>${esc(d.team || '')}${pct ? ` · ${esc(t('f1.winPct', { p: pct }))}` : ''}</small></span>
-        ${sel >= 0 ? `<span class="dsel">${sel === 0 && !locked ? '★ ' : ''}${PLACE(sel)}</span>` : ''}
-        ${fin >= 0 ? `<span class="dfin" title="${esc(t('f1.resultTitle'))}">${PLACE(fin)}</span>` : ''}
       </button></li>`;
     }).join('');
     updateEntry();
   }
 
   function updateEntry() {
-    const n = draft.filter(Boolean).length;
-    $('#progress-text').textContent = data.locked ? '' : t('f1.progress', { n });
-    $('#progress-fill').style.width = (n / 3 * 100) + '%';
+    const n = draft.length, total = N();
+    $('#progress-text').textContent = data.locked ? '' : t('f1.progressN', { n, t: total });
+    $('#progress-fill').style.width = (total ? n / total * 100 : 0) + '%';
     const xp = data.expert;
-    const same = xp ? draft.filter((id, i) => id && id === xp[i]).length : 0;
-    $('#agree').textContent = xp && n && !data.locked ? t('f1.agree', { a: same }) : '';
+    const same = xp ? draft.filter((id, i) => id === xp[i]).length : 0;
+    $('#agree').textContent = xp && n && !data.locked ? t('f1.agreeN', { a: same, n }) : '';
 
     const btn = $('#submit'), name = $('#username');
-    const unchanged = data.me && data.me.picks.every((id, i) => id === draft[i]) && data.me.username === name.value.trim()
+    const unchanged = data.me && data.me.picks.length === draft.length && data.me.picks.every((id, i) => id === draft[i]) && data.me.username === name.value.trim()
       && (data.me.email || '') === $('#email').value.trim().toLowerCase() && !!data.me.optIn === $('#optin').checked;
     [name, $('#email'), $('#optin')].forEach(el => { el.disabled = data.locked; });
     const out = data.locked && !data.me; // race started and you didn't enter: just show the list
     $('.entry-form').hidden = out;
-    $('#my-pod').hidden = out;
+    $('#my-order').hidden = out;
     btn.classList.toggle('saved', !!unchanged);
     if (data.locked) {
       btn.disabled = true;
       btn.textContent = data.me ? t('btn.locked') : t('btn.closed');
       $('#lock-sub').textContent = data.me ? t('f1.lockedMe') : t('f1.lockedNo');
     } else {
-      btn.disabled = saving || n !== 3 || unchanged;
+      btn.disabled = saving || n !== total || unchanged;
       btn.textContent = saving ? t('btn.saving') : unchanged ? t('btn.saved') : data.me ? t('btn.update') : t('btn.submit');
-      $('#lock-sub').textContent = t('f1.howTo');
+      $('#lock-sub').textContent = data.me && data.me.picks.length < total ? t('f1.redo') : t('f1.howToOrder');
     }
   }
 
@@ -305,37 +313,35 @@
     s.textContent = msg;
     s.className = 'status' + (kind ? ' ' + kind : '');
   }
+  const changed = () => { saveDraft(); renderMine(); renderDrivers(); setStatus(''); };
   $('#drivers').addEventListener('click', e => {
     const b = e.target.closest('button[data-driver]');
-    if (!b || b.disabled || !data || data.locked) return;
-    const id = b.dataset.driver;
-    const was = draft.indexOf(id);
-    if (was >= 0) { draft[was] = null; slot = was; }     // tap a chosen driver again to take him off
-    else {
-      const at = activeSlot();
-      if (at === -1) { setStatus(t('f1.full'), 'error'); return; } // podium full: tap a spot or a chosen driver first
-      draft[at] = id;
-      slot = null;                                       // move on to the next empty spot
-    }
-    saveDraft();
-    renderMine();
-    renderDrivers();
-    const again = document.querySelector(`button[data-driver="${CSS.escape(id)}"]`);
-    if (again) again.focus({ preventScroll: true });
-    setStatus('');
-    if (draft.every(Boolean) && was < 0 && !$('#username').value.trim()) $('.entry-form').scrollIntoView({ block: 'center', behavior: 'smooth' });
+    if (!b || !data || data.locked) return;
+    if (!draft.includes(b.dataset.driver)) draft.push(b.dataset.driver);   // takes the next place
+    changed();
+    const next = document.querySelector('#drivers button');
+    if (next) next.focus({ preventScroll: true });
+    if (draft.length === N() && !$('#username').value.trim()) $('.entry-form').scrollIntoView({ block: 'center', behavior: 'smooth' });
   });
-  $('#my-pod').addEventListener('click', e => {
-    if (data.locked) return;
-    const x = e.target.closest('button[data-clear]');
-    if (x) { draft[Number(x.dataset.clear)] = null; slot = Number(x.dataset.clear); }
+  $('#my-order').addEventListener('click', e => {
+    const b = e.target.closest('button[data-move]');
+    if (!b || data.locked) return;
+    const i = Number(b.dataset.i);
+    if (b.dataset.move === 'out') draft.splice(i, 1);                     // later drivers move up one place
     else {
-      const b = e.target.closest('button[data-slot]');
-      if (!b) return;
-      slot = Number(b.dataset.slot);                     // the next driver you tap goes here
+      const j = b.dataset.move === 'up' ? i - 1 : i + 1;
+      if (j < 0 || j >= draft.length) return;
+      [draft[i], draft[j]] = [draft[j], draft[i]];
     }
-    saveDraft(); renderMine(); renderDrivers();
+    changed();
+    const again = document.querySelector(`#my-order button[data-move="${b.dataset.move}"][data-i="${b.dataset.move === 'up' ? i - 1 : b.dataset.move === 'down' ? i + 1 : i}"]`);
+    if (again && !again.disabled) again.focus({ preventScroll: true });
   });
+  $('#fill-rest').addEventListener('click', () => {               // the rest in championship order
+    data.drivers.forEach(d => { if (!draft.includes(d.id)) draft.push(d.id); });
+    changed();
+  });
+  $('#clear-all').addEventListener('click', () => { draft = []; changed(); });
   $('#username').addEventListener('input', () => { if (data) updateEntry(); });
   $('#email').addEventListener('input', () => { $('#email').removeAttribute('aria-invalid'); if (data) updateEntry(); });
   $('#optin').addEventListener('change', () => { if (data) updateEntry(); });

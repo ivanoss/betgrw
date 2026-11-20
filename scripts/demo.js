@@ -41,7 +41,7 @@ process.env.MOCK_FILE = file;
 const f1File = path.join(__dirname, '..', 'sample', 'demo-f1.json');
 const realStart = Date.parse('2026-11-22T04:00:00Z');
 fs.writeFileSync(f1File, JSON.stringify(live
-  ? { start: new Date(now - 2 * 3600e3).toISOString(), podium: ['max_verstappen', 'antonelli', 'norris'] }
+  ? { start: new Date(now - 2 * 3600e3).toISOString(), order: ['max_verstappen', 'antonelli', 'norris', 'russell', 'leclerc', 'hamilton', 'piastri', 'hadjar', 'lawson', 'alonso', 'gasly', 'sainz', 'albon', 'lindblad', 'bearman', 'ocon', 'hulkenberg', 'bortoleto', 'colapinto', 'stroll', 'perez', 'bottas'] }
   : { start: new Date(realStart > now ? realStart : now + 26 * 3600e3).toISOString() }, null, 2));
 process.env.F1_MOCK_FILE = f1File;
 process.env.DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'sample', 'data');

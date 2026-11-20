@@ -39,14 +39,15 @@
 
     <section class="block">
       <div class="block-head">
-        <h2>Tagliani’s podium</h2>
+        <h2>Tagliani’s prediction</h2>
         <p class="block-sub" id="race-info"></p>
       </div>
       <label class="intro-label" for="intro">Tagliani’s take <span>(optional, shows above his podium)</span></label>
       <textarea id="intro" maxlength="400" rows="3" placeholder="e.g. Long straights, cold tires: I like Verstappen here."></textarea>
       <div class="f1-selects" id="x-selects"></div>
       <div class="admin-actions">
-        <button class="submit" id="save-picks" type="button">Save Tagliani’s podium</button>
+        <button class="text-btn" type="button" data-fill="#x-selects">Fill empty spots in championship order</button>
+        <button class="submit" id="save-picks" type="button">Save Tagliani’s order</button>
         <p class="status" id="picks-status" role="status"></p>
       </div>
     </section>
@@ -60,7 +61,8 @@
       </div>
       <div class="f1-selects" id="r-selects"></div>
       <div class="admin-actions">
-        <button class="submit" id="save-result" type="button">Save official podium</button>
+        <button class="text-btn" type="button" data-fill="#r-selects">Fill empty spots in championship order</button>
+        <button class="submit" id="save-result" type="button">Save official order</button>
         <button class="text-btn" id="clear-result" type="button">Use the automatic result</button>
         <p class="status" id="result-status" role="status"></p>
       </div>
@@ -71,7 +73,7 @@
     <section class="block">
       <div class="block-head">
         <h2>Players’ picks</h2>
-        <p class="block-sub">Best score first once the race is over. 1st place wins the Alex Tagliani merch pack. If several players tie for 1st, draw one of them. Check eligibility before sending it. Entries from the same internet connection are highlighted in orange.</p>
+        <p class="block-sub">Best score first once the race is over. Each player’s full order is in the CSV. 1st place wins the Alex Tagliani merch pack. If several players tie for 1st, draw one of them. Check eligibility before sending it. Entries from the same internet connection are highlighted in orange.</p>
       </div>
       <div class="grid-tools">
         <label for="find" class="sr">Find a player</label>
@@ -82,7 +84,7 @@
       </div>
       <div class="grid-wrap">
         <table class="grid">
-          <thead><tr><th><span class="sr">Select</span></th><th>#</th><th>Player</th><th>Email</th><th>1st</th><th>2nd</th><th>3rd</th><th class="num">Pts</th><th class="num">Prize</th><th>Connection</th><th>Entered</th></tr></thead>
+          <thead><tr><th><span class="sr">Select</span></th><th>#</th><th>Player</th><th>Email</th><th>Their 1st</th><th>2nd</th><th>3rd</th><th class="num">Pts</th><th class="num">Prize</th><th>Connection</th><th>Entered</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
@@ -91,7 +93,7 @@
   </div>
 </main>
 <style>
-  .f1-selects { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+  .f1-selects { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 12px; margin-top: 14px; }
   .f1-selects label { display: grid; gap: 4px; font-weight: 600; font-size: 14px; }
   .f1-selects select { font: inherit; padding: 9px 10px; border: 1px solid var(--boards); border-radius: 4px; background: #fff; }
   .grid td.hit { color: #0A8A3F; font-weight: 700; }

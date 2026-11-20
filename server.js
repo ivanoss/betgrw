@@ -472,8 +472,8 @@ function isAdmin(req) {
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json' };
 
 /* ---------- F1: Beat Tagliani, Las Vegas Grand Prix ----------
-   Players pick the podium (winner, 2nd, 3rd). Alex Tagliani makes his picks in /admin/f1.
-   Results come from the Jolpica F1 feed (Ergast format). The official podium can also be typed in /admin/f1,
+   Players predict the full finishing order, 1st to last. Alex Tagliani makes his picks in /admin/f1.
+   Results come from the Jolpica F1 feed (Ergast format). The official order can also be typed in /admin/f1,
    which overrides the feed. While the contest is on, it's the homepage; the NHL site stays at /nhl. */
 const F1 = {
   key: 'f1-vegas-2026',
@@ -482,8 +482,8 @@ const F1 = {
   name: 'Las Vegas Grand Prix',
   start: '2026-11-22T04:00:00Z',   // Saturday Nov 21, 8 PM Las Vegas / 11 PM Eastern (the feed's time wins if it differs)
   homeUntil: process.env.F1_HOME_UNTIL || '2026-11-24T11:00:00Z', // Tuesday 6 AM Eastern: the homepage goes back to the NHL
-  // Points: right driver in the right spot = 3, right driver on the podium but in another spot = 1. Max 9.
-  exact: 3, onPodium: 1,
+  // Points for each driver in the exact right place: 5 in the top 3, 1 anywhere else.
+  top: 5, topN: 3, rest: 1,
   prizes: [],      // no cash for this race: 1st place wins an Alex Tagliani merch pack
   merch: 'Alex Tagliani merch pack'
 };
@@ -509,11 +509,11 @@ let f1Cache = null; // { at, ttl, data }
 async function f1Feed() {
   if (f1Cache && Date.now() - f1Cache.at < f1Cache.ttl) return f1Cache.data;
   const prev = f1Cache && f1Cache.data;
-  let data = { start: F1.start, drivers: F1_GRID, podium: null, fromFeed: false };
+  let data = { start: F1.start, drivers: F1_GRID, order: null, fromFeed: false };
   try {
     if (F1_MOCK_FILE) {
       const m = JSON.parse(await fsp.readFile(F1_MOCK_FILE, 'utf8'));
-      data = { start: m.start || F1.start, drivers: F1_GRID, podium: m.podium || null, fromFeed: true };
+      data = { start: m.start || F1.start, drivers: F1_GRID, order: m.order || null, fromFeed: true };
     } else {
       const get = async u => {
         const r = await fetch(F1_API + u, { headers: { 'User-Agent': 'BeatGeorgesPickem/1.0' }, signal: AbortSignal.timeout(8000) });
@@ -534,7 +534,7 @@ async function f1Feed() {
         const res = (await get(`/${F1.season}/${race.round}/results.json?limit=40`)).RaceTable.Races[0];
         if (res && res.Results && res.Results.length >= 3) {
           const byPos = res.Results.slice().sort((a, b) => Number(a.position) - Number(b.position));
-          data.podium = byPos.slice(0, 3).map(x => x.Driver.driverId);
+          data.order = byPos.map(x => x.Driver.driverId); // full classification, retirements at the back
           if (!list.length) list = byPos.map(x => toDriver(x.Driver, x.Constructor && x.Constructor.name));
         }
         if (list.length >= 15) {
@@ -550,7 +550,7 @@ async function f1Feed() {
     console.error('F1 fetch failed:', err.message);
     if (prev) data = prev;
   }
-  const raceOn = Date.now() > Date.parse(data.start) && !data.podium;
+  const raceOn = Date.now() > Date.parse(data.start) && !data.order;
   f1Cache = { at: Date.now(), ttl: F1_MOCK_FILE ? 1000 : raceOn ? 60e3 : 10 * 60e3, data };
   return data;
 }
@@ -559,31 +559,32 @@ async function loadF1() {
   return { ...c, expert: Array.isArray(c.expert) ? c.expert : [], entries: Array.isArray(c.entries) ? c.entries : [], okNets: Array.isArray(c.okNets) ? c.okNets : [] };
 }
 const saveF1 = c => putRecord(F1.key, c);
-function scorePodium(picks, podium) {
-  if (!podium || !Array.isArray(picks)) return 0;
+function scoreOrder(picks, order) {
+  if (!order || !Array.isArray(picks)) return 0;
   let s = 0;
-  picks.forEach((p, i) => { if (p === podium[i]) s += F1.exact; else if (podium.includes(p)) s += F1.onPodium; });
+  picks.forEach((p, i) => { if (p && p === order[i]) s += i < F1.topN ? F1.top : F1.rest; });
   return s;
 }
 // Everything the F1 page needs: race, drivers, Tagliani, leaderboard
 async function f1Snapshot(contest) {
   const feed = await f1Feed();
-  const podium = Array.isArray(contest.result) && contest.result.length === 3 ? contest.result : feed.podium;
+  const order = Array.isArray(contest.result) && contest.result.length >= 3 ? contest.result : feed.order;
   const lockAt = Date.parse(feed.start);
-  const fans = contest.entries.map(e => ({ name: e.username, score: scorePodium(e.picks, podium) }));
+  const fans = contest.entries.map(e => ({ name: e.username, score: scoreOrder(e.picks, order) }));
   fans.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
-  if (podium) splitPrizes(fans, F1.prizes); else fans.forEach(f => { f.rank = null; f.prize = 0; });
+  if (order) splitPrizes(fans, F1.prizes); else fans.forEach(f => { f.rank = null; f.prize = 0; });
   const rows = [...fans];
-  if (contest.expert.length === 3) {
-    const xs = scorePodium(contest.expert, podium);
-    const at = podium ? rows.findIndex(r => r.score <= xs) : 0;
+  if (contest.expert.length >= 3) {
+    const xs = scoreOrder(contest.expert, order);
+    const at = order ? rows.findIndex(r => r.score <= xs) : 0;
     rows.splice(at === -1 ? rows.length : at, 0, { name: 'Alex Tagliani', score: xs, expert: true, rank: null, prize: 0 });
   }
-  return { feed, podium, lockAt, locked: Date.now() >= lockAt, final: !!podium, rows };
+  return { feed, order, lockAt, locked: Date.now() >= lockAt, final: !!order, rows };
 }
-function validPodium(p, drivers) {
+// A full finishing order: every driver once
+function validOrder(p, drivers) {
   const ids = new Set(drivers.map(d => d.id));
-  return Array.isArray(p) && p.length === 3 && p.every(x => typeof x === 'string' && ids.has(x)) && new Set(p).size === 3;
+  return Array.isArray(p) && p.length === ids.size && p.every(x => typeof x === 'string' && ids.has(x)) && new Set(p).size === ids.size;
 }
 async function f1IsHome() {
   const s = await getRecord('settings', {});
@@ -600,13 +601,13 @@ async function handleF1State(req, res) {
   for (const e of contest.entries) if (e.picks && e.picks[0]) split[e.picks[0]] = (split[e.picks[0]] || 0) + 1;
   send(res, 200, {
     race: { name: F1.name, start: snap.lockAt }, now: Date.now(), lockAt: snap.lockAt, locked: snap.locked, final: snap.final,
-    drivers: snap.feed.drivers, podium: snap.podium, points: { exact: F1.exact, onPodium: F1.onPodium },
-    expert: contest.expert.length === 3 ? contest.expert : null, intro: contest.intro || '',
+    drivers: snap.feed.drivers, order: snap.order, points: { top: F1.top, topN: F1.topN, rest: F1.rest },
+    expert: contest.expert.length >= 3 ? contest.expert : null, intro: contest.intro || '',
     split, entries: contest.entries.length,
     leaderboard: { rows: snap.rows, prizes: F1.prizes, pool: F1.pool, merch: true },
     recent: [...contest.entries].sort((a, b) => (b.updated || 0) - (a.updated || 0)).slice(0, 8)
       .map(e => ({ name: e.username, at: e.updated || e.created, edited: (e.updated || 0) - (e.created || 0) > 1000 })),
-    me: me ? { username: me.username, picks: me.picks, email: me.email || '', optIn: !!me.optIn, score: scorePodium(me.picks, snap.podium) } : null
+    me: me ? { username: me.username, picks: me.picks, email: me.email || '', optIn: !!me.optIn, score: scoreOrder(me.picks, snap.order) } : null
   });
 }
 
@@ -625,8 +626,8 @@ async function handleF1Entry(req, res, ip) {
   const email = String(body.email || '').trim().toLowerCase();
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return send(res, 400, { error: 'Enter a valid email address. We use it to contact you if you win.' });
   const optIn = body.optIn === true;
-  if (!validPodium(body.picks, feed.drivers)) return send(res, 400, { error: 'Pick three different drivers: 1st, 2nd and 3rd.' });
-  const picks = body.picks.slice(0, 3);
+  if (!validOrder(body.picks, feed.drivers)) return send(res, 400, { error: 'Rank every driver, from 1st to last.' });
+  const picks = body.picks.slice();
 
   const contest = await loadF1();
   const sent = String(req.headers['x-entry-token'] || '');
@@ -664,12 +665,12 @@ async function handleF1Admin(req, res, route) {
     const byName = new Map(snap.rows.filter(r => !r.expert).map(r => [r.name, r]));
     return send(res, 200, {
       race: F1.name, lockAt: snap.lockAt, locked: snap.locked, drivers: snap.feed.drivers, fromFeed: snap.feed.fromFeed,
-      feedPodium: snap.feed.podium, result: contest.result || null, podium: snap.podium,
+      feedOrder: snap.feed.order, result: contest.result || null, order: snap.order,
       expert: contest.expert, intro: contest.intro || '', home: settings.home || 'auto', homeUntil: F1.homeUntil, homeNow: await f1IsHome(),
       prizes: F1.prizes, maxPerNetwork: MAX_PER_NETWORK, okNets: contest.okNets,
       entries: contest.entries.map(e => ({
         username: e.username, email: e.email || '', optIn: !!e.optIn, created: e.created, updated: e.updated, picks: e.picks, net: e.net || '',
-        score: scorePodium(e.picks, snap.podium), rank: byName.get(e.username)?.rank, prize: byName.get(e.username)?.prize || 0
+        score: scoreOrder(e.picks, snap.order), rank: byName.get(e.username)?.rank, prize: byName.get(e.username)?.prize || 0
       }))
     });
   }
@@ -678,15 +679,15 @@ async function handleF1Admin(req, res, route) {
   const feed = await f1Feed();
   const contest = await loadF1();
   if (route === 'f1/picks') {
-    if (body.picks && body.picks.length && !validPodium(body.picks, feed.drivers)) return send(res, 400, { error: 'Pick three different drivers.' });
-    contest.expert = body.picks && body.picks.length ? body.picks.slice(0, 3) : [];
+    if (body.picks && body.picks.length && !validOrder(body.picks, feed.drivers)) return send(res, 400, { error: 'Rank every driver once, from 1st to last.' });
+    contest.expert = body.picks && body.picks.length ? body.picks.slice() : [];
     contest.intro = String(body.intro || '').replace(/\s+/g, ' ').trim().slice(0, 400);
     await saveF1(contest);
     return send(res, 200, { ok: true });
   }
-  if (route === 'f1/result') { // official podium typed in by hand; empty = use the feed
-    if (body.result && body.result.length && !validPodium(body.result, feed.drivers)) return send(res, 400, { error: 'Pick three different drivers.' });
-    contest.result = body.result && body.result.length ? body.result.slice(0, 3) : null;
+  if (route === 'f1/result') { // official order typed in by hand; empty = use the feed
+    if (body.result && body.result.length && !validOrder(body.result, feed.drivers)) return send(res, 400, { error: 'Rank every driver once, from 1st to last.' });
+    contest.result = body.result && body.result.length ? body.result.slice() : null;
     await saveF1(contest);
     return send(res, 200, { ok: true });
   }

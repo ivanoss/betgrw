@@ -98,7 +98,7 @@ Any Node host works. Settings:
 - All public text lives in `public/i18n.js` (an `en` and an `fr` list). Change wording there. The admin page stays in English.
 
 ## F1: Beat Tagliani (Las Vegas Grand Prix, Nov 21, 2026)
-- Players tap their winner, then 2nd and 3rd. 3 points for the right driver in the right place, 1 point for a driver on the podium in another place (max 9). Prize: 1st place wins an Alex Tagliani merch pack (no cash). Ties for 1st: draw one winner among them.
+- Players predict the full finishing order, 1st to last (tap drivers in order, adjust with ↑ ↓, or fill the rest in championship order). Each driver in the exact right place: 5 points in the top 3, 1 point from 4th to last. Prize: 1st place wins an Alex Tagliani merch pack (no cash). Ties for 1st: draw one winner among them.
 - **Homepage:** the F1 page is the homepage until Tuesday Nov 24, 6 AM Eastern, then the NHL site comes back on its own. The NHL site is always at `/nhl`, the F1 page at `/f1`. Switch it by hand in `/admin/f1` → **Homepage shows**.
 - **`/admin/f1`:** Tagliani's podium and take, the official result, players' picks with CSV download.
 - Drivers and the result come from the free Jolpica F1 feed (api.jolpi.ca). If it's down, the built-in 2026 grid is used, and you can type the official podium in `/admin/f1` (it overrides the feed).

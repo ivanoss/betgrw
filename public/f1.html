@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title data-i18n="f1.docTitle">Battez Tagliani | Grand Prix de Las Vegas</title>
-<meta name="description" content="Alex Tagliani choisit le podium du Grand Prix de Las Vegas. Faites vos choix et finissez devant lui.">
+<meta name="description" content="Prédisez l’ordre d’arrivée du Grand Prix de Las Vegas et finissez devant Alex Tagliani.">
 <meta name="theme-color" content="#0A1128">
 <meta property="og:image" content="/apple-touch-icon.png">
 <link rel="icon" href="favicon.png" type="image/png">
@@ -89,6 +89,7 @@
     <section class="block f1-result" id="result" aria-labelledby="result-h" hidden>
       <header class="block-head"><h2 id="result-h" data-i18n="f1.resultTitle">Podium officiel</h2></header>
       <ol class="pod" id="result-pod"></ol>
+      <details class="full-order"><summary data-i18n="f1.fullResult">Classement complet</summary><ol class="order" id="result-full"></ol></details>
     </section>
 
     <!-- Tagliani -->
@@ -102,6 +103,7 @@
       </div>
       <blockquote class="expert-take" id="x-intro" hidden></blockquote>
       <ol class="pod" id="x-pod"></ol>
+      <details class="full-order" id="x-more"><summary data-i18n="f1.fullX">Son classement complet</summary><ol class="order" id="x-full"></ol></details>
     </section>
 
     <!-- Your picks -->
@@ -114,7 +116,11 @@
 
 
       <p class="f1-step" id="step" aria-live="polite"></p>
-      <ol class="pod mine" id="my-pod" aria-label="Votre podium" data-i18n-aria="f1.myPod"></ol>
+      <ol class="order mine" id="my-order" aria-label="Votre classement" data-i18n-aria="f1.myOrder"></ol>
+      <div class="order-tools" id="order-tools">
+        <button type="button" class="text-btn" id="fill-rest" data-i18n="f1.fillRest">Compléter le reste selon le championnat</button>
+        <button type="button" class="text-btn" id="clear-all" data-i18n="f1.clearAll">Tout effacer</button>
+      </div>
       <ol class="dgrid" id="drivers"></ol>
 
       <div class="entry-form after-grid">
@@ -169,9 +175,9 @@
     <section class="block f1-points" aria-labelledby="pts-h">
       <header class="block-head"><h2 id="pts-h" data-i18n="f1.ptsTitle">Pointage</h2></header>
       <ul>
-        <li><b>3</b><span data-i18n="f1.ptsExact">Bon pilote à la bonne position</span></li>
-        <li><b>1</b><span data-i18n="f1.ptsPodium">Bon pilote sur le podium, mais à une autre position</span></li>
-        <li><b>9</b><span data-i18n="f1.ptsMax">Maximum : le podium exact</span></li>
+        <li><b>5</b><span data-i18n="f1.ptsTop">Bon pilote à la bonne place dans le top 3</span></li>
+        <li><b>1</b><span data-i18n="f1.ptsRest">Bon pilote à la bonne place, de la 4e à la dernière</span></li>
+        <li><b id="pts-max">34</b><span data-i18n="f1.ptsMaxAll">Maximum : le classement exact</span></li>
       </ul>
     </section>
 
